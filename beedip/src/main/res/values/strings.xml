@@ -13,7 +13,7 @@
     <string name="external_geopackage_access_title"><font color='#DD000000'>Storage Permission Denied</font></string>
     <string name="external_geopackage_access_message"><font color='#DD000000'>BeeDip</font> has been denied access to external storage. Please enable if you would like to access the GeoPackages that reside in external storage.</string>
     <string name="external_export_geopackage_access_title"><font color='#DD000000'>Storage Permission Denied</font></string>
-    <string name="external_export_geopackage_access_message"><font color='#DD000000'>MapCache</font> has been denied access to external storage. Please enable if you would like to export a GeoPackage to external storage.</string>
+    <string name="external_export_geopackage_access_message"><font color='#DD000000'>BeeDip</font> has been denied access to external storage. Please enable if you would like to export a GeoPackage to external storage.</string>
     <string name="external_import_geopackage_access_title"><font color='#DD000000'>Storage Permission Denied</font></string>
     <string name="external_import_geopackage_access_message"><font color='#DD000000'>MapCache</font> has been denied access to external storage. Please enable if you would like to import an externally linked GeoPackage.</string>
     <string name="settings">Settings</string>
