@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/testo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Valori misurati"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_above="@+id/quadrante"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="50dp" />
+
+    <TextView
+        android:id="@+id/statico"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scegli formazione rocciosa"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_below="@+id/quadrante"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="21dp" />
+
+    <android.support.v7.widget.AppCompatImageButton
+        android:id="@+id/quadrante"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:contentDescription=""
+        android:scaleType="fitXY"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_compass" />
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/freccia"
+        android:layout_width="178dp"
+        android:layout_height="152dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_compass_hand" />
+
+</RelativeLayout>
