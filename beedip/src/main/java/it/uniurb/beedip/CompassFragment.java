@@ -74,7 +74,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     Toast featureTableToast;
 
-    //Dichiarazione variabili
+    //Variables declaration
     View myView;
     private static SensorManager sensorService;
     private Sensor sensor;
@@ -99,7 +99,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //Parti da inizializzare quando il frammento viene creato
+        //Variables initialization
         contaClick = 1;
         currentDegree = 0f;
         currentClino = 0f;
