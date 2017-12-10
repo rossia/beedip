@@ -51,4 +51,13 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_compass_hand" />
 
+    <Button
+        android:id="@+id/compass_save_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/testo"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/testo"
+        android:text="@string/save" />
+
 </RelativeLayout>

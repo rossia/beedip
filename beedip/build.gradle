@@ -55,6 +55,7 @@ dependencies {
     compile 'com.android.support:multidex:1.0.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     //compile project(':geopackage-map') // uncomment me to build locally
+    compile 'com.android.support:appcompat-v7:25.0.2'
 }
 
 configure extensions.android, {
