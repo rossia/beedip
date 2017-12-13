@@ -12,43 +12,99 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_above="@+id/quadrante"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="50dp" />
-
-    <TextView
-        android:id="@+id/statico"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scegli formazione rocciosa"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_below="@+id/quadrante"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="21dp" />
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 
     <android.support.v7.widget.AppCompatImageButton
         android:id="@+id/quadrante"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_width="200dp"
+        android:layout_height="@dimen/quadrante"
         android:contentDescription=""
         android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_compass" />
+        app:srcCompat="@drawable/ic_compass"
+        android:layout_below="@+id/testo"
+        android:layout_centerHorizontal="true" />
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/freccia"
         android:layout_width="178dp"
         android:layout_height="152dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_compass_hand" />
+        app:srcCompat="@drawable/ic_compass_hand"
+        android:layout_marginTop="22dp"
+        android:layout_alignTop="@+id/quadrante"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/rockUnit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="90dp"
+        android:text="@string/rock_unit"
+        android:layout_below="@+id/quadrante"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_toLeftOf="@+id/testo"
+        android:layout_toStartOf="@+id/testo" />
+
+    <Button
+        android:id="@+id/locality"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/rockUnit"
+        android:layout_alignStart="@+id/rockUnit"
+        android:layout_below="@+id/rockUnit"
+        android:text="@string/locality"
+        android:layout_toLeftOf="@+id/testo"
+        android:layout_toStartOf="@+id/testo" />
+
+    <Button
+        android:id="@+id/type"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/locality"
+        android:layout_alignRight="@+id/locality"
+        android:layout_below="@+id/locality"
+        android:text="@string/type"
+        android:layout_alignLeft="@+id/locality"
+        android:layout_alignStart="@+id/locality" />
+
+    <Button
+        android:id="@+id/accuracy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/accuracy"
+        android:layout_alignBaseline="@+id/rockUnit"
+        android:layout_alignBottom="@+id/rockUnit"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignLeft="@+id/note"
+        android:layout_alignStart="@+id/note" />
+
+    <Button
+        android:id="@+id/note"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/note"
+        android:layout_below="@+id/accuracy"
+        android:layout_toRightOf="@+id/testo"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:id="@+id/save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/save"
+        android:layout_below="@+id/note"
+        android:layout_alignRight="@+id/note"
+        android:layout_alignEnd="@+id/note"
+        android:layout_alignLeft="@+id/note"
+        android:layout_alignStart="@+id/note" />
 
 </RelativeLayout>

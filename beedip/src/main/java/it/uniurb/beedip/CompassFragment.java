@@ -1,24 +1,34 @@
 package it.uniurb.beedip;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.text.InputType;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import it.uniurb.beedip.data.CompassMeasurement;
 import it.uniurb.beedip.data.OnMeasurementSentListener;
+import android.graphics.Color;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by utente on 22/10/2017.
@@ -31,16 +41,30 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private static SensorManager sensorService;
     private Sensor sensor;
     private CompassMeasurement compassMesurement;
-    private float currentDegree;
-    private float currentClino;
-    private int contaClick;
+    private int currentDegree;
+    private int currentClino;
+    private int clickCounter;
     //private Bussola bussola;
     private Inclinometer inclinometro;
-    private boolean blocco;
+    private boolean msrLock;
     ImageView iv_arrow;
     ImageView back;
     TextView testo;
     ImageButton ibutton;
+    Button rockUnit;
+    Button locality;
+    Button type;
+    Button accuracy;
+    Button note;
+    Button save;
+    CharSequence choices[];
+    private String typeChosen;
+    private boolean accuracyChosen;
+    LinkedList<String> rockUnits = new LinkedList();
+    String location;
+    String userNotes;
+    String tmp;
+    boolean allowToSave;
     // fragment to which measurement data is sent
     private OnMeasurementSentListener onMeasurementSentListener;
 
@@ -50,11 +74,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         super.onCreate(savedInstanceState);
 
         //Variables initialization
-        contaClick = 1;
-        currentDegree = 0f;
-        currentClino = 0f;
-        blocco = false;
+        clickCounter = 1;
+        currentDegree = 0;
+        currentClino = 0;
+        msrLock = false;
         inclinometro = new Inclinometer();
+        choices =  new CharSequence[] {"Bedding", "Cleavage", "Fault"};
+        typeChosen = (String) choices[0];
+        accuracyChosen = true;
 
 
     }
@@ -68,55 +95,235 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        //Qua dentro ci andremo a trovare le view
         super.onViewCreated(view, savedInstanceState);
 
-        //inclinometro = new Inclinometro();
-        //bussola = new Bussola();
-        //Inizializzazione degli id
         iv_arrow = (ImageView) getView().findViewById(it.uniurb.beedip.R.id.freccia);
         //back = (ImageView) getView().findViewById(R.id.quadrante);
         testo = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
-        ibutton = (ImageButton) getView().findViewById(it.uniurb.beedip.R.id.quadrante);
-        //Inizializzazione SensorManager (permette di inizializzare nuovi sensori)
+        //SensorManager's initialization (It allow to declare sensor variables)
         sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-        //Inizializzazione dei sensori
+        //Initialization of useful sensors
         sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION);
         sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
-
-
-
-
-
+        //Buttons init
         ibutton = (ImageButton) getView().findViewById(it.uniurb.beedip.R.id.quadrante);
+        rockUnit = (Button) getView().findViewById(R.id.rockUnit);
+        locality = (Button) getView().findViewById(R.id.locality);
+        type = (Button) getView().findViewById(R.id.type);
+        accuracy = (Button) getView().findViewById(R.id.accuracy);
+        note = (Button) getView().findViewById(R.id.note);
+        save = (Button) getView().findViewById(R.id.save);
+        //Setting initial background color of buttons
+        accuracy.setBackgroundColor(Color.GREEN);
+        save.setBackgroundColor(Color.BLUE);
+
+
+
+
+        //Creation of clock face's buttons
+        //By simple click on button
         ibutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //blocca il risultato
-                if(blocco == true)
-                    blocco = false;
-                else
-                    blocco = true;
+                //Lock the current result
+                 msrLock = !msrLock;
             }
 
         });
-
+        //By long click on button
         ibutton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (contaClick == 0) {
+                //Switch compass and clinometer depending on what's active
+                if (clickCounter == 0) {
                     iv_arrow.setImageResource(it.uniurb.beedip.R.drawable.ic_compass_hand);
                     //back.setImageResource(R.drawable.q_comp);
-                    contaClick++;
+                    clickCounter++;
                 } else {
                     iv_arrow.setImageResource(it.uniurb.beedip.R.drawable.ic_inclinometer_hand);
                     //back.setImageResource(R.drawable.q_clin);
-                    contaClick--;
+                    clickCounter--;
                 }
 
                 return true;
             }
         });
+
+        //Rock Unit button
+        rockUnit.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
+                alertDialog.setTitle("Rock Unit");
+                alertDialog.setMessage("Write a rock unit to add");
+
+                final EditText input = new EditText(getActivity());
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT);
+                input.setLayoutParams(lp);
+                alertDialog.setView(input);
+
+                alertDialog.setPositiveButton("Add",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                tmp = input.getText().toString();
+                                if((tmp != null) && (!tmp.equals("")))
+                                    rockUnits.add(tmp);
+
+                            }
+                        });
+
+                alertDialog.setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                alertDialog.show();
+            }
+
+        });
+
+        //Locality button
+        locality.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
+                alertDialog.setTitle("Location");
+                alertDialog.setMessage("Write a location.");
+
+                final EditText input = new EditText(getActivity());
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT);
+                input.setLayoutParams(lp);
+                alertDialog.setView(input);
+                //Do you want to set an icon?
+                //alertDialog.setIcon(R.drawable.ICON_ID);
+
+                alertDialog.setPositiveButton("Add",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                tmp = input.getText().toString();
+                                if((tmp != null) && (!tmp.equals("")))
+                                    location = tmp;
+                            }
+                        });
+
+                alertDialog.setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                alertDialog.show();
+            }
+
+        });
+
+        //Type button
+        type.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                //Printing popup menu
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                builder.setTitle("Pick a type");
+                builder.setItems(choices, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int selected) {
+                        typeChosen = (String) choices[selected];
+                        dialog.cancel(); //not sure about this
+                    }
+                });
+                builder.show();
+            }
+
+        });
+
+        //Accuracy button
+        accuracy.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                //Changing button colour
+                if(!accuracyChosen)
+                    accuracy.setBackgroundColor(Color.RED);
+                else
+                    accuracy.setBackgroundColor(Color.GREEN);
+                accuracyChosen = !accuracyChosen;
+
+            }
+
+        });
+
+        //Note button
+        note.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                builder.setTitle("Comment");
+
+                final EditText input = new EditText(getActivity());
+
+                input.setText("Leave a comment.");
+                input.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                input.setSingleLine(false);
+                input.setLines(5);
+                input.setMaxLines(5);
+                input.setGravity(Gravity.LEFT | Gravity.TOP);
+                builder.setView(input);
+
+                builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        tmp = input.getText().toString();
+                        if(tmp != null && !tmp.equals(""))
+                            userNotes = tmp;
+                    }
+                });
+
+                builder.setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                AlertDialog alert = builder.create();
+                alert.show();
+            }
+
+        });
+
+        //Save button
+        //On short click
+        save.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                if(allowToSave){
+                    //Calculate the subtypes
+                    //Then send
+                }
+            }
+
+        });
+        //On long click
+        save.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if(allowToSave){
+                    //Calculate the subtypes
+                    //Then send
+                }
+                return true;
+            }
+        });
+
 
 
     }
@@ -136,11 +343,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        //da definire
+        //TO END TO DEFINE
         int degree;
-        if((contaClick == 1) && (blocco == false)) {
-            //Animazione della bussola
-            //Acquisizione dei valori
+        if((clickCounter == 1) && (!msrLock)) {
+            //Compass animation
+            //Acquiring values
             degree = Math.round(sensorEvent.values[0]);
             RotateAnimation ra = new RotateAnimation(currentDegree, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
             ra.setDuration(1000);
@@ -152,15 +359,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             currentDegree = -degree;
 
-            //Valori testo bussola
+            //Compass text-printed values
             testo.setText(degree+"°");
-        } else if((contaClick == 0) && (blocco == false)) {
+        } else if((clickCounter == 0) && (!msrLock)) {
 
-            //Animazione della livella
-            //Acquisizione dei valori
-            //inclinometro.ModBeta(Math.round(sensorEvent.values[1]));
-            //inclinometro.ModGamma(Math.round(sensorEvent.values[2]));
-            float x = sensorEvent.values[1];
+            //Clinometer animation
+            //Acquiring values
+            int x = Math.round(sensorEvent.values[1]);
             int y = Math.round(sensorEvent.values[2]);
             RotateAnimation ra = new RotateAnimation(currentClino, y, Animation.RELATIVE_TO_SELF,
                     0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
@@ -171,7 +376,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
 
 
-            //Valori testo livella
+            //Clino text-printed values
             testo.setText( x + "/" + y);
             saveMesurement();
             sendMeasurementData(compassMesurement);
@@ -180,7 +385,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        //nulla
+        //nothing
     }
 
     @Override
