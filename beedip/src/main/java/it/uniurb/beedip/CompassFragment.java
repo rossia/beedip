@@ -113,7 +113,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     String userNotes;
     String tmp;
     boolean allowToSave;
-    Button saveButton;
     // fragment to which measurement data is sent
     private OnMeasurementSentListener onMeasurementSentListener;
 
@@ -158,7 +157,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //SensorManager's initialization (It allow to declare sensor variables)
 
         ibutton = (ImageButton) getView().findViewById(it.uniurb.beedip.R.id.quadrante);
-        saveButton = (Button) getView().findViewById(R.id.compass_save_button);
         //Inizializzazione SensorManager (permette di inizializzare nuovi sensori)
         sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
         //Initialization of useful sensors
@@ -174,8 +172,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         save = (Button) getView().findViewById(R.id.save);
         //Setting initial background color of buttons
         accuracy.setBackgroundColor(Color.GREEN);
-        save.setBackgroundColor(Color.BLUE);
-        saveButton.setOnClickListener(new View.OnClickListener() {
+        save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 featureTableToast = Toast.makeText(getActivity(),
@@ -186,7 +183,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             }
         });
-        saveButton.setEnabled(false);
+        save.setEnabled(false);
 
 
 
@@ -369,33 +366,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Save button
-        //On short click
-        save.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View arg0) {
-                if(allowToSave){
-                    //Calculate the subtypes
-                    //Then send
-                }
-            }
-
-        });
-        //On long click
-        save.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                if(allowToSave){
-                    //Calculate the subtypes
-                    //Then send
-                }
-                return true;
-            }
-        });
-
-
-
     }
     @Override
     public void onAttach(Activity activity) {
@@ -475,7 +445,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     public void setEditFeaturesTable (String editFeaturesDatabase, String editFeaturesTable){
         this.editFeaturesDatabase = editFeaturesDatabase;
         this.editFeaturesTable = editFeaturesTable;
-        saveButton.setEnabled(true);
+        save.setEnabled(true);
     }
     private void saveMeasurement(LatLng position, CompassMeasurement measurement ) {
         if (editFeaturesDatabase != null && editFeaturesTable != null) {
