@@ -209,12 +209,15 @@
 
     <string name="preloaded_ogc_examples"><a href="http://github.com/opengeospatial/geopackage/tree/gh-pages/data">OGC Sample Data</a></string>
     <string name="preloaded_nga_examples"><a href="http://github.com/ngageoint/GeoPackage/tree/master/docs/examples">NGA Sample Data</a></string>
+
     <string name="locality">Locality</string>
     <string name="rock_unit">Rock Unit</string>
     <string name="type">Type</string>
     <string name="accuracy">Accuracy</string>
     <string name="save">Save</string>
     <string name="note">Note</string>
+    <string name="dip_field_name">immersione</string>
+    <string name="dip_direction_field_name">inclinazio</string>
     <string-array name="preloaded_geopackage_url_labels">
         <item>Blue Marble</item>
         <item>Whitehorse</item>

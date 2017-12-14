@@ -23,7 +23,8 @@ import it.uniurb.beedip.data.OnMeasurementSentListener;
  * @author osbornb
  */
 public class MainActivity extends Activity implements
-        NavigationDrawerFragment.NavigationDrawerCallbacks, OnMeasurementSentListener {
+        NavigationDrawerFragment.NavigationDrawerCallbacks, OnMeasurementSentListener,
+        GeoPackageManagerFragment.OnFeatureTableSelectedListener {
 
     /**
      * Manager drawer position
@@ -325,9 +326,14 @@ public class MainActivity extends Activity implements
                 break;
         }
     }
+    // TODO: rimuovere non serve
     @Override
     public void onMeasurementSent(CompassMeasurement compassMeasurement) {
         mapFragment.setMeasurement(compassMeasurement);
     }
+    @Override
+    public void onFeatureTableSelected(String editFeaturesDatabase, String editFeaturesTable) {
+        compassFragment.setEditFeaturesTable(editFeaturesDatabase, editFeaturesTable);
 
+    }
 }

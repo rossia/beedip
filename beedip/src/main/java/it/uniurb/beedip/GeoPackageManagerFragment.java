@@ -38,6 +38,7 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CheckedTextView;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
@@ -193,9 +194,22 @@ public class GeoPackageManagerFragment extends Fragment implements
      */
     private boolean hiddenExternalWarning = true;
 
+
+    /**
+     * Callback function to notify feature table selection
+     */
+
+    OnFeatureTableSelectedListener mCallback;
+
+    // TODO: onAttach() should verify that Container Activity implements this interface
+    public interface OnFeatureTableSelectedListener {
+        public void onFeatureTableSelected(String editFeaturesDatabase, String editFeaturesTable);
+    }
+
     /**
      * Constructor
      */
+
     public GeoPackageManagerFragment() {
 
     }
@@ -207,11 +221,13 @@ public class GeoPackageManagerFragment extends Fragment implements
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         active = GeoPackageDatabases.getInstance(getActivity());
+        mCallback = (OnFeatureTableSelectedListener) getActivity();
         this.inflater = inflater;
         manager = GeoPackageFactory.getManager(getActivity());
         View v = inflater.inflate(it.uniurb.beedip.R.layout.fragment_manager, null);
         ExpandableListView elv = (ExpandableListView) v
                 .findViewById(it.uniurb.beedip.R.id.fragment_manager_view_ui);
+        elv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         elv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view,
@@ -235,7 +251,6 @@ public class GeoPackageManagerFragment extends Fragment implements
             }
         });
         elv.setAdapter(adapter);
-
         update();
 
         return v;
@@ -3978,6 +3993,9 @@ public class GeoPackageManagerFragment extends Fragment implements
      */
     public class GeoPackageListAdapter extends BaseExpandableListAdapter {
 
+        private int selectGroup = -1;
+        private int selectItem = -1 ;
+
         @Override
         public int getGroupCount() {
             return databases.size();
@@ -4028,24 +4046,46 @@ public class GeoPackageManagerFragment extends Fragment implements
         }
 
         @Override
-        public View getChildView(int i, int j, boolean b, View view,
+        public View getChildView(final int i,final int j, boolean b, View view,
                                  ViewGroup viewGroup) {
+
             if (view == null) {
                 view = inflater.inflate(it.uniurb.beedip.R.layout.manager_child, null);
             }
 
             final GeoPackageTable table = databaseTables.get(i).get(j);
 
-            CheckBox checkBox = (CheckBox) view
-                    .findViewById(it.uniurb.beedip.R.id.manager_child_checkbox);
-            ImageView imageView = (ImageView) view
-                    .findViewById(it.uniurb.beedip.R.id.manager_child_image);
-            TextView tableName = (TextView) view
+
+            CheckedTextView tableName = (CheckedTextView) view
                     .findViewById(it.uniurb.beedip.R.id.manager_child_name);
             TextView count = (TextView) view
                     .findViewById(it.uniurb.beedip.R.id.manager_child_count);
 
-            checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            tableName.setChecked( (selectGroup == i)  && (selectItem == j) );
+            // TODO verificare se è questo il punto corretto in cui eseguire l'aggiunta
+            if ( tableName.isChecked() ) {
+                active.addTable(table);
+            } else
+            {
+                active.removeTable(table, true);
+            }
+            tableName.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    selectGroup = i;
+                    selectItem = j;
+                    notifyDataSetChanged();
+                    // TODO: verificare che sia corretto utilizzare table.name
+                    if (databases.get(i) != null &&  table.name != null) {
+                        mCallback.onFeatureTableSelected(databases.get(i), table.name);
+                    }
+                }
+            });
+
+
+            /*
+
+            tableName.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView,
@@ -4066,6 +4106,9 @@ public class GeoPackageManagerFragment extends Fragment implements
                     }
                 }
             });
+            */
+
+
             tableName.setOnLongClickListener(new View.OnLongClickListener() {
 
                 @Override
@@ -4075,7 +4118,7 @@ public class GeoPackageManagerFragment extends Fragment implements
                 }
             });
 
-            checkBox.setChecked(table.isActive());
+            //checkBox.setChecked(table.isActive());
 
             switch (table.getType()) {
 
@@ -4117,18 +4160,16 @@ public class GeoPackageManagerFragment extends Fragment implements
                                 break;
                         }
                     }
-                    imageView.setImageDrawable(getResources().getDrawable(
-                            drawableId));
+                    // TODO vedere se rimettere le immagini
+                    //imageView.setImageDrawable(getResources().getDrawable(drawableId));
                     break;
 
                 case TILE:
-                    imageView.setImageDrawable(getResources().getDrawable(
-                            it.uniurb.beedip.R.drawable.ic_tiles));
+                    //imageView.setImageDrawable(getResources().getDrawable(it.uniurb.beedip.R.drawable.ic_tiles));
                     break;
 
                 case FEATURE_OVERLAY:
-                    imageView.setImageDrawable(getResources().getDrawable(
-                            it.uniurb.beedip.R.drawable.ic_format_paint));
+                    //imageView.setImageDrawable(getResources().getDrawable(it.uniurb.beedip.R.drawable.ic_format_paint));
                     break;
 
                 default:

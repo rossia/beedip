@@ -5,24 +5,14 @@
     android:background="#99D6D6"
     android:orientation="horizontal" >
 
-    <CheckBox
-        android:id="@+id/manager_child_checkbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <ImageView
-        android:id="@+id/manager_child_image"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginLeft="10dp"
-        android:contentDescription="@string/table_image_description" />
-
-    <TextView
+    <CheckedTextView
         android:id="@+id/manager_child_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
-        android:textSize="22sp" />
+        android:textSize="22sp"
+        android:checkMark="?android:attr/listChoiceIndicatorSingle"
+        />
 
     <TextView
         android:id="@+id/manager_child_count"
