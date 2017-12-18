@@ -203,7 +203,7 @@ public class GeoPackageManagerFragment extends Fragment implements
 
     // TODO: onAttach() should verify that Container Activity implements this interface
     public interface OnFeatureTableSelectedListener {
-        public void onFeatureTableSelected(String editFeaturesDatabase, String editFeaturesTable);
+        public void onFeatureTableSelected(String editFeaturesDatabase);
     }
 
     /**
@@ -4032,15 +4032,29 @@ public class GeoPackageManagerFragment extends Fragment implements
         }
 
         @Override
-        public View getGroupView(int i, boolean isExpanded, View view,
+        public View getGroupView(final int i, boolean isExpanded, View view,
                                  ViewGroup viewGroup) {
             if (view == null) {
                 view = inflater.inflate(it.uniurb.beedip.R.layout.manager_group, null);
             }
 
-            TextView geoPackageName = (TextView) view
+            CheckedTextView geoPackageName = (CheckedTextView) view
                     .findViewById(it.uniurb.beedip.R.id.manager_group_name);
             geoPackageName.setText(databases.get(i));
+            // TextView geoPackageName = (TextView) view.findViewById(it.uniurb.beedip.R.id.manager_group_name);
+            geoPackageName.setChecked( (selectGroup == i));
+
+            geoPackageName.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    selectGroup = i;
+                    notifyDataSetChanged();
+                    // TODO: verificare che sia corretto utilizzare table.name
+                    if (databases.get(i) != null) {
+                        mCallback.onFeatureTableSelected(databases.get(i));
+                    }
+                }
+            });
 
             return view;
         }
@@ -4056,13 +4070,13 @@ public class GeoPackageManagerFragment extends Fragment implements
             final GeoPackageTable table = databaseTables.get(i).get(j);
 
 
-            CheckedTextView tableName = (CheckedTextView) view
+            TextView tableName = (TextView) view
                     .findViewById(it.uniurb.beedip.R.id.manager_child_name);
             TextView count = (TextView) view
                     .findViewById(it.uniurb.beedip.R.id.manager_child_count);
 
+            /*
             tableName.setChecked( (selectGroup == i)  && (selectItem == j) );
-            // TODO verificare se è questo il punto corretto in cui eseguire l'aggiunta
             if ( tableName.isChecked() ) {
                 active.addTable(table);
             } else
@@ -4077,10 +4091,11 @@ public class GeoPackageManagerFragment extends Fragment implements
                     notifyDataSetChanged();
                     // TODO: verificare che sia corretto utilizzare table.name
                     if (databases.get(i) != null &&  table.name != null) {
-                        mCallback.onFeatureTableSelected(databases.get(i), table.name);
+                        mCallback.onFeatureTableSelected(databases.get(i));
                     }
                 }
             });
+            */
 
 
             /*

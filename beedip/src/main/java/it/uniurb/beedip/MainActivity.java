@@ -332,8 +332,8 @@ public class MainActivity extends Activity implements
         mapFragment.setMeasurement(compassMeasurement);
     }
     @Override
-    public void onFeatureTableSelected(String editFeaturesDatabase, String editFeaturesTable) {
-        compassFragment.setEditFeaturesTable(editFeaturesDatabase, editFeaturesTable);
+    public void onFeatureTableSelected(String editFeaturesDatabase) {
+        compassFragment.setEditFeaturesTable(editFeaturesDatabase);
 
     }
 }

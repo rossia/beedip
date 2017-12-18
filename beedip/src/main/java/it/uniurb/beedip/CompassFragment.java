@@ -19,16 +19,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import it.uniurb.beedip.data.CompassMeasurement;
@@ -71,6 +75,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     /**
      * Edit features database
      */
+    private List<String> features;
     private String editFeaturesDatabase = null;
 
     /**
@@ -166,6 +171,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         ibutton = (ImageButton) getView().findViewById(it.uniurb.beedip.R.id.quadrante);
         rockUnit = (Button) getView().findViewById(R.id.rockUnit);
         locality = (Button) getView().findViewById(R.id.locality);
+        //type = (Spinner) getView().findViewById(R.id.fragment_compass_layer_spinner);
         type = (Button) getView().findViewById(R.id.type);
         accuracy = (Button) getView().findViewById(R.id.accuracy);
         note = (Button) getView().findViewById(R.id.note);
@@ -183,6 +189,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             }
         });
+        type.setEnabled(false);
         save.setEnabled(false);
 
 
@@ -292,21 +299,23 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         });
 
         //Type button
+
         type.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 //Printing popup menu
-                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle("Pick a type");
-                builder.setItems(choices, new DialogInterface.OnClickListener() {
+                AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity());
+                dialog.setTitle("Pick a type");
+                final ArrayAdapter<String> featuresAdapter = new ArrayAdapter<String>(
+                        getActivity(), android.R.layout.simple_spinner_item, features);
+                  dialog.setAdapter(featuresAdapter, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int selected) {
-                        typeChosen = (String) choices[selected];
-                        dialog.cancel(); //not sure about this
+                        editFeaturesTable = featuresAdapter.getItem(selected);
+                        dialog.dismiss();
                     }
-                });
-                builder.show();
+                }).create().show();
             }
 
         });
@@ -438,15 +447,21 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         super.onResume();
     }
 
+
+
+    public void setEditFeaturesTable (String editFeaturesDatabase){
+        this.editFeaturesDatabase = editFeaturesDatabase;
+        GeoPackage geoPackage = manager.open(editFeaturesDatabase);
+        // TODO: gestire il caso in cui il db isEmpty()
+        features = geoPackage.getFeatureTables();
+        type.setEnabled(true);
+        save.setEnabled(true);
+    }
+
     /**
      * Save the Compass Measurement in the selected layer
      */
 
-    public void setEditFeaturesTable (String editFeaturesDatabase, String editFeaturesTable){
-        this.editFeaturesDatabase = editFeaturesDatabase;
-        this.editFeaturesTable = editFeaturesTable;
-        save.setEnabled(true);
-    }
     private void saveMeasurement(LatLng position, CompassMeasurement measurement ) {
         if (editFeaturesDatabase != null && editFeaturesTable != null) {
             GeoPackage geoPackage = manager.open(editFeaturesDatabase);

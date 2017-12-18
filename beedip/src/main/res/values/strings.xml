@@ -5,7 +5,7 @@
     <string name="app_label_name">BeeDip</string>
     <string name="title_map">Map</string>
     <string name="title_compass">Compass</string>
-    <string name="title_manager">Manager</string>
+    <string name="title_manager">Project</string>
     <string name="location_access_rational_title">Use <font color='#DD000000'>BeeDip</font> location services</string>
     <string name="location_access_rational_message">BeeDip allows you to view and zoom to your current location</string>
     <string name="storage_access_rational_title">Use <font color='#DD000000'>BeeDip</font> storage services</string>

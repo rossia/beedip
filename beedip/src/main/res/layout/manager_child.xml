@@ -5,14 +5,12 @@
     android:background="#99D6D6"
     android:orientation="horizontal" >
 
-    <CheckedTextView
+    <TextView
         android:id="@+id/manager_child_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
-        android:textSize="22sp"
-        android:checkMark="?android:attr/listChoiceIndicatorSingle"
-        />
+        android:textSize="22sp" />
 
     <TextView
         android:id="@+id/manager_child_count"
