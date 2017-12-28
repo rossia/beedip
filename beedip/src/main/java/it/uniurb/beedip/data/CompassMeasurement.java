@@ -8,6 +8,7 @@ package it.uniurb.beedip.data;
 public class CompassMeasurement {
     private int dip; //degree 0-90
     private int dipDirection; // degree 0-360
+    private Orientation orientation;
     // type : Upright/OverTurned/horizontal/Vertical
     private boolean isAccurate;
 
@@ -20,22 +21,36 @@ public class CompassMeasurement {
         assert dipDirection >= 0 && dipDirection < 360;
 
     }
-    public CompassMeasurement(int dip, int dipDirection, DipType type, boolean isAccurate) {
+    public CompassMeasurement(int dip, int dipDirection, Orientation orientation, boolean isAccurate) {
         this.dip = dip;
         this.dipDirection = dipDirection;
         this.isAccurate = isAccurate;
+        this.orientation = orientation;
         // TODO vedere se utilizzare i metodi Validate o Precondition;
         assert dip >= 0 && dip <= 90;
         assert dipDirection >= 0 && dipDirection < 360;
 
     }
 
-    public enum DipType {
-        BEDDING, CLEAVAGE, FAULT;
+    public enum Orientation {
+        UPRIGHT, OVERTURNED;
         public String toString() {
             String id = name();
             String lower = id.substring(1).toLowerCase();
             return id.charAt(0) + lower;
+        }
+        public int ValueOf() {
+            String id = name();
+            int rval = -1;
+            switch (id) {
+                case "UPRIGHT":
+                    rval = 1;
+                    break;
+                case "OVERTURNED":
+                    rval = 2;
+                    break;
+            }
+            return rval;
         }
     }
 
@@ -45,5 +60,6 @@ public class CompassMeasurement {
     public int getDipDirection() {
         return dipDirection;
     }
+    public int getOrientation() {return orientation.ValueOf();}
 
 }

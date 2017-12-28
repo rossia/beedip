@@ -185,7 +185,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         "saving in table " + editFeaturesTable + " of db " + editFeaturesDatabase, Toast.LENGTH_LONG);
                 featureTableToast.show();
                 saveMeasurement(new LatLng(new Double(43.6700),new Double(12.2300)),
-                        new CompassMeasurement(90,0, CompassMeasurement.DipType.BEDDING,true));
+                        new CompassMeasurement(90,0, CompassMeasurement.Orientation.UPRIGHT,true));
 
             }
         });
@@ -474,6 +474,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         FeatureRow newPoint = featureDao.newRow();
                 newPoint.setValue(getString(R.string.dip_field_name), measurement.getDip());
                 newPoint.setValue(getString(R.string.dip_direction_field_name), measurement.getDipDirection());
+                newPoint.setValue(getString(R.string.orientation_field_name), measurement.getOrientation());
                 GeoPackageGeometryData pointGeomData = new GeoPackageGeometryData(srsId);
                 pointGeomData.setGeometry(point);
                 newPoint.setGeometry(pointGeomData);
