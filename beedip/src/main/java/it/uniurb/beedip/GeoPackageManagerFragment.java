@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Color;
@@ -49,6 +50,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.ipaulpro.afilechooser.utils.FileUtils;
+import com.j256.ormlite.table.DatabaseTable;
 
 import org.osgeo.proj4j.units.DegreeUnit;
 
@@ -148,6 +150,12 @@ public class GeoPackageManagerFragment extends Fragment implements
      * List of databases
      */
     private List<String> databases = new ArrayList<String>();
+
+    /**
+     * Selected database
+     */
+
+    private String selectedDataBase = null;
 
     /**
      * List of database tables within each database
@@ -3161,17 +3169,23 @@ public class GeoPackageManagerFragment extends Fragment implements
         boolean handled = true;
 
         switch (item.getItemId()) {
+            /*
             case it.uniurb.beedip.R.id.import_geopackage_url:
                 importGeopackageFromUrl();
                 break;
+            */
             case it.uniurb.beedip.R.id.import_geopackage_file:
                 importGeopackageFromFile();
                 break;
             case it.uniurb.beedip.R.id.create_geopackage:
-                createGeoPackage();
+                //createGeoPackage();
+                CreateFromTemplate(getActivity());
                 break;
             case it.uniurb.beedip.R.id.clear_selected_tables:
-                active.clearActive();
+                //TODO: mettere a posto questa parte
+                if (selectedDataBase != null) {
+                    active.removeDatabase(selectedDataBase, false);
+                }
                 update();
                 break;
             default:
@@ -3987,6 +4001,74 @@ public class GeoPackageManagerFragment extends Fragment implements
 
         dialog.show();
     }
+    /**
+     * Create db from a Template
+     *
+     */
+    private void CreateFromTemplate(Context context) {
+        final File exportDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        final String templateFileName = "template.gpkg";
+        final String templateDatabaseName = "template";
+
+        try {
+            InputStream dbIs = context.getAssets().open(templateFileName);
+            if (manager.importGeoPackage(templateDatabaseName,dbIs, true) ) {
+
+                final EditText input = new EditText(getActivity());
+                input.setText("myProject");
+                AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity(), R.style.AppCompatAlertDialogStyle)
+                        .setTitle(getString(R.string.geopackage_create_label))
+                        .setMessage(exportDirectory.getPath() + File.separator)
+                        .setView(input)
+                        .setPositiveButton(getString(R.string.button_ok_label),
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog,
+                                                        int whichButton) {
+                                        String value = input.getText().toString();
+                                        if (value != null && !value.isEmpty()) {
+                                            try {
+                                                manager.exportGeoPackage(templateDatabaseName,
+                                                        value, exportDirectory);
+                                                String exportedFileName = value + ".gpkg";
+                                                final File exportedFilePath = new File (exportDirectory,exportedFileName);
+                                                manager.importGeoPackageAsExternalLink(exportedFilePath,value);
+                                                update();
+
+                                            } catch (Exception e) {
+                                                GeoPackageUtils
+                                                        .showMessage(
+                                                                getActivity(),
+                                                                getString(R.string.geopackage_create_label),
+                                                                e.getMessage());
+                                            } finally {
+                                                manager.delete(templateDatabaseName);
+                                                update();
+
+                                            }
+                                        }
+                                    }
+                                })
+                        .setNegativeButton(getString(R.string.button_cancel_label),
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog,
+                                                        int whichButton) {
+                                        dialog.cancel();
+                                        manager.delete(templateDatabaseName);
+                                        update();
+                                    }
+                                });
+
+                dialog.show();
+            }
+        } catch (GeoPackageException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
 
     /**
      * Expandable list adapter
@@ -4041,18 +4123,30 @@ public class GeoPackageManagerFragment extends Fragment implements
             CheckedTextView geoPackageName = (CheckedTextView) view
                     .findViewById(it.uniurb.beedip.R.id.manager_group_name);
             geoPackageName.setText(databases.get(i));
-            // TextView geoPackageName = (TextView) view.findViewById(it.uniurb.beedip.R.id.manager_group_name);
             geoPackageName.setChecked( (selectGroup == i));
 
             geoPackageName.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     selectGroup = i;
-                    notifyDataSetChanged();
-                    // TODO: verificare che sia corretto utilizzare table.name
                     if (databases.get(i) != null) {
-                        mCallback.onFeatureTableSelected(databases.get(i));
+                        if (databases.get(i) != selectedDataBase){
+                            selectedDataBase = databases.get(i);
+                            mCallback.onFeatureTableSelected(selectedDataBase);
+                            active.clearActive();
+                            Iterator<GeoPackageTable> tablesIterator = databaseTables.get(i).iterator();
+                            while (tablesIterator.hasNext())
+                                active.addTable(tablesIterator.next());
+                            notifyDataSetChanged();
+                        }
                     }
+                }
+            });
+            geoPackageName.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    databaseOptions(databases.get(i));
+                    return false;
                 }
             });
 
@@ -4075,55 +4169,6 @@ public class GeoPackageManagerFragment extends Fragment implements
             TextView count = (TextView) view
                     .findViewById(it.uniurb.beedip.R.id.manager_child_count);
 
-            /*
-            tableName.setChecked( (selectGroup == i)  && (selectItem == j) );
-            if ( tableName.isChecked() ) {
-                active.addTable(table);
-            } else
-            {
-                active.removeTable(table, true);
-            }
-            tableName.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    selectGroup = i;
-                    selectItem = j;
-                    notifyDataSetChanged();
-                    // TODO: verificare che sia corretto utilizzare table.name
-                    if (databases.get(i) != null &&  table.name != null) {
-                        mCallback.onFeatureTableSelected(databases.get(i));
-                    }
-                }
-            });
-            */
-
-
-            /*
-
-            tableName.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView,
-                                             boolean isChecked) {
-                    if (table.isActive() != isChecked) {
-                        table.setActive(isChecked);
-
-                        if (table.getType() == GeoPackageTableType.FEATURE_OVERLAY) {
-                            active.removeTable(table);
-                            active.addTable(table);
-                        } else {
-                            if (isChecked) {
-                                active.addTable(table);
-                            } else {
-                                active.removeTable(table, true);
-                            }
-                        }
-                    }
-                }
-            });
-            */
-
-
             tableName.setOnLongClickListener(new View.OnLongClickListener() {
 
                 @Override
@@ -4133,7 +4178,6 @@ public class GeoPackageManagerFragment extends Fragment implements
                 }
             });
 
-            //checkBox.setChecked(table.isActive());
 
             switch (table.getType()) {
 

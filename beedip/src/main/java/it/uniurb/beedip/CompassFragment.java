@@ -617,6 +617,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         FeatureRow newPoint = featureDao.newRow();
                 newPoint.setValue(getString(R.string.dip_field_name), measurement.getDip());
                 newPoint.setValue(getString(R.string.dip_direction_field_name), measurement.getDipDirection());
+                newPoint.setValue(getString(R.string.orientation_field_name), measurement.getOrientation());
                 GeoPackageGeometryData pointGeomData = new GeoPackageGeometryData(srsId);
                 pointGeomData.setGeometry(point);
                 newPoint.setGeometry(pointGeomData);

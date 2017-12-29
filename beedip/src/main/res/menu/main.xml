@@ -40,11 +40,13 @@
             android:title="@string/map_type_hybrid"/>
     </group>
     <group android:id="@+id/menu_group_list" >
+        <!--
         <item
             android:id="@+id/import_geopackage_url"
             android:icon="@drawable/ic_import_url"
             android:showAsAction="always"
             android:title="@string/import_geopackage_url"/>
+        -->
         <item
             android:id="@+id/import_geopackage_file"
             android:icon="@drawable/ic_import_file"
