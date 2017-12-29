@@ -216,6 +216,7 @@
     <string name="accuracy">Accuracy</string>
     <string name="save">Save</string>
     <string name="note">Note</string>
+    <string name="surveyor">Surveyor</string>
     <string name="dip_field_name">dip</string>
     <string name="dip_direction_field_name">dipDirection</string>
     <string name="orientation_field_name">orientation</string>
