@@ -71,12 +71,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
      * Edit features database
      */
     private List<String> features;
-    private String editFeaturesDatabase = null;
+    private String editFeaturesDatabase;
 
     /**
      * Edit features table
      */
-    private String editFeaturesTable = null;
+    private String editFeaturesTable;
 
     /**
      * features table toast
@@ -106,9 +106,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     Button note;
     Button save;
     Button operator;
-    CharSequence choices[];
-    private String typeChosen;
-    private boolean accuracyChosen;
+    private boolean selectedAccuracy;
     private boolean msrLock;
     private boolean reverted;
     private boolean cfState;
@@ -132,9 +130,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         currentDegree = 0;
         currentClino = 0;
         inclinometro = new Inclinometer();
-        choices =  new CharSequence[] {"Bedding", "Cleavage", "Fault"};
-        typeChosen = (String) choices[0];
-        accuracyChosen = true;
+        selectedAccuracy = true;
         msrLock = false;
         reverted = false;
         cfState = true;
@@ -156,12 +152,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(View view, @Nullable final Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         lIndicator = (ImageView) getView().findViewById(R.id.littleIndicator);
         bIndicator = (ImageView) getView().findViewById(R.id.bigIndicator);
-        //back = (ImageView) getView().findViewById(R.id.quadrante);
         testo = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
         //SensorManager's initialization (It allow to declare sensor variables)
         sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
@@ -188,8 +183,21 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     featureTableToast = Toast.makeText(getActivity(),
                             "saving in table " + editFeaturesTable + " of db " + editFeaturesDatabase, Toast.LENGTH_LONG);
                     featureTableToast.show();
-                    saveMeasurement(new LatLng(new Double(43.6700), new Double(12.2300)),
-                            new CompassMeasurement(90, 0, CompassMeasurement.DipType.BEDDING, true));
+                    CompassMeasurement.Younging selectedYounging = CompassMeasurement.Younging.UPRIGHT;
+                    if (reverted) {
+                        selectedYounging = CompassMeasurement.Younging.OVERTURNED;
+                    }
+                    CompassMeasurement currentMeasure = new CompassMeasurement(currentClino, currentDegree, selectedYounging, selectedAccuracy);
+                    if (surveyor != null)
+                        currentMeasure.setSurveyor(surveyor);
+                    if (location != null)
+                        currentMeasure.setSite(location);
+                    if (rockUnits != null)
+                        currentMeasure.setRockUnit(rockUnits);
+                    if (userNotes != null)
+                        currentMeasure.setNote(userNotes);
+                    saveMeasurement(new LatLng(new Double(43.6700), new Double(12.2300)), currentMeasure);
+
                     resetParameters();
                 }
                 else{
@@ -360,8 +368,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Type button
-        type.setText(typeChosen);
         type.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -375,8 +381,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     @Override
                     public void onClick(DialogInterface dialog, int selected) {
                         //editFeaturesTable = featuresAdapter.getItem(selected);
-                        typeChosen = (String) choices[selected];
-                        type.setText(typeChosen);
+                        //typeChosen = (String) choices[selected];
+                        editFeaturesTable = featuresAdapter.getItem(selected);
+                        type.setText(editFeaturesTable.toString());
                         dialog.dismiss();
                     }
                 }).create().show();
@@ -390,11 +397,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onClick(View arg0) {
                 //Changing button colour
-                if(!accuracyChosen)
+                if(!selectedAccuracy)
                     accuracy.setBackgroundColor(Color.RED);
                 else
                     accuracy.setBackgroundColor(Color.GREEN);
-                accuracyChosen = !accuracyChosen;
+                selectedAccuracy = !selectedAccuracy;
 
             }
 
@@ -595,10 +602,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     public void setEditFeaturesTable (String editFeaturesDatabase){
         this.editFeaturesDatabase = editFeaturesDatabase;
         GeoPackage geoPackage = manager.open(editFeaturesDatabase);
-        // TODO: gestire il caso in cui il db isEmpty()
-        features = geoPackage.getFeatureTables();
-        type.setEnabled(true);
-        save.setEnabled(true);
+        if (!editFeaturesDatabase.isEmpty() && !geoPackage.getFeatureTables().isEmpty()){
+            features = geoPackage.getFeatureTables();
+            type.setEnabled(true);
+            editFeaturesTable = features.get(0);
+            type.setText(editFeaturesTable.toString());
+            save.setEnabled(true);
+        } else {
+
+        }
     }
 
     /**
@@ -617,18 +629,29 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         FeatureRow newPoint = featureDao.newRow();
                 newPoint.setValue(getString(R.string.dip_field_name), measurement.getDip());
                 newPoint.setValue(getString(R.string.dip_direction_field_name), measurement.getDipDirection());
-                newPoint.setValue(getString(R.string.orientation_field_name), measurement.getOrientation());
+                newPoint.setValue(getString(R.string.orientation_field_name), measurement.getYounging());
+                if (measurement.getRockUnit() != null) {
+                    newPoint.setValue(getString(R.string.rock_unit_field_name), measurement.getRockUnit());
+                }
+                if (measurement.getSite() != null) {
+                    newPoint.setValue(getString(R.string.site_field_name), measurement.getSite());
+                }
+                if (measurement.getSurveyor() != null) {
+                    newPoint.setValue(getString(R.string.surveyor_field_name), measurement.getSurveyor());
+                }
+                if (measurement.getNote() != null) {
+                    newPoint.setValue(getString(R.string.userNote_field_name), measurement.getNote());
+                }
+
                 GeoPackageGeometryData pointGeomData = new GeoPackageGeometryData(srsId);
                 pointGeomData.setGeometry(point);
                 newPoint.setGeometry(pointGeomData);
                 featureDao.insert(newPoint);
                 active.setModified(true);
-
                 Contents contents = featureDao.getGeometryColumns().getContents();
                 contents.setLastChange(new Date());
                 ContentsDao contentsDao = geoPackage.getContentsDao();
                 contentsDao.update(contents);
-
             } catch (Exception e) {
                 if (GeoPackageUtils.isFutureSQLiteException(e)) {
                     GeoPackageUtils
@@ -672,9 +695,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     private  void resetParameters(){
         userNotes = null;
-        typeChosen = (String) choices[0];
+        //typeChosen = (String) choices[0];
         rockUnits = null;
-        accuracyChosen = true;
+        selectedAccuracy = true;
     }
 }
 

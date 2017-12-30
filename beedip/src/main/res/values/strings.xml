@@ -219,9 +219,12 @@
     <string name="surveyor">Surveyor</string>
     <string name="dip_field_name">dip</string>
     <string name="dip_direction_field_name">dipDirection</string>
-    <string name="orientation_field_name">orientation</string>
+    <string name="orientation_field_name">younging</string>
     <string name="accuracy_field_name">accuracy</string>
     <string name="rock_unit_field_name">rockUnit</string>
+    <string name="site_field_name">site</string>
+    <string name="surveyor_field_name">surveyor</string>
+    <string name="userNote_field_name">note</string>
     <string-array name="preloaded_geopackage_url_labels">
         <item>Blue Marble</item>
         <item>Whitehorse</item>

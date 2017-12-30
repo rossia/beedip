@@ -8,58 +8,50 @@ package it.uniurb.beedip.data;
 public class CompassMeasurement {
     private int dip; //degree 0-90
     private int dipDirection; // degree 0-360
-    private Orientation orientation;
-    // type : Upright/OverTurned/horizontal/Vertical
+    private int younging;
     private boolean isAccurate;
+    private String rockUnit;
+    private String site;
+    private String surveyor;
+    private String note;
 
-    public CompassMeasurement(double dip, double dipDirection, boolean isAccurate) {
-        this.dip = (int) dip;
-        this.dipDirection = (int) dipDirection;
-        this.isAccurate = isAccurate;
-        // TODO vedere se utilizzare i metodi Validate o Precondition;
-        assert dip >= 0 && dip <= 90;
-        assert dipDirection >= 0 && dipDirection < 360;
 
-    }
-    public CompassMeasurement(int dip, int dipDirection, Orientation orientation, boolean isAccurate) {
+    public CompassMeasurement(int dip, int dipDirection, Younging younging, boolean isAccurate) {
         this.dip = dip;
         this.dipDirection = dipDirection;
         this.isAccurate = isAccurate;
-        this.orientation = orientation;
+        this.younging = younging.getValue();
         // TODO vedere se utilizzare i metodi Validate o Precondition;
         assert dip >= 0 && dip <= 90;
         assert dipDirection >= 0 && dipDirection < 360;
-
     }
-
-    public enum Orientation {
-        UPRIGHT, OVERTURNED;
+    public void setRockUnit(String rockUnit) { this.rockUnit = rockUnit; }
+    public void setSite(String site) { this.site = site; }
+    public void setSurveyor(String surveyor) { this.surveyor = surveyor;  }
+    public void setNote(String note) { this.note = note; }
+    public enum Younging {
+        UPRIGHT(0), OVERTURNED(1);
+        private final int value;
+        private Younging(int value) {
+            this.value = value;
+        }
         public String toString() {
-            String id = name();
-            String lower = id.substring(1).toLowerCase();
-            return id.charAt(0) + lower;
+            return String.valueOf(value);
         }
-        public int ValueOf() {
-            String id = name();
-            int rval = -1;
-            switch (id) {
-                case "UPRIGHT":
-                    rval = 1;
-                    break;
-                case "OVERTURNED":
-                    rval = 2;
-                    break;
-            }
-            return rval;
+        public int getValue() {
+            return value;
         }
     }
-
     public int getDip() {
         return dip;
     }
     public int getDipDirection() {
         return dipDirection;
     }
-    public int getOrientation() {return orientation.ValueOf();}
+    public int getYounging() {return younging;}
+    public String getRockUnit() {return rockUnit;}
+    public String getSite() {return site;}
+    public String getSurveyor() { return surveyor; }
+    public String getNote() { return note; }
 
 }
