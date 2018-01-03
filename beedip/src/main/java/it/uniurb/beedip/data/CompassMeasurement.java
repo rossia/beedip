@@ -9,21 +9,28 @@ public class CompassMeasurement {
     private int dip; //degree 0-90
     private int dipDirection; // degree 0-360
     private int younging;
-    private boolean isAccurate;
+
+    private int isAccurate;
     private String rockUnit;
     private String site;
     private String surveyor;
     private String note;
 
 
+
     public CompassMeasurement(int dip, int dipDirection, Younging younging, boolean isAccurate) {
         this.dip = dip;
+        setAccurate(isAccurate);
         this.dipDirection = dipDirection;
-        this.isAccurate = isAccurate;
         this.younging = younging.getValue();
         // TODO vedere se utilizzare i metodi Validate o Precondition;
         assert dip >= 0 && dip <= 90;
         assert dipDirection >= 0 && dipDirection < 360;
+    }
+    public void setAccurate(boolean accurate) {
+        this.isAccurate = 1;
+        if (accurate)
+            isAccurate = 0;
     }
     public void setRockUnit(String rockUnit) { this.rockUnit = rockUnit; }
     public void setSite(String site) { this.site = site; }
@@ -53,5 +60,6 @@ public class CompassMeasurement {
     public String getSite() {return site;}
     public String getSurveyor() { return surveyor; }
     public String getNote() { return note; }
+    public int isAccurate() {return isAccurate; }
 
 }
