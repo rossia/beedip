@@ -3181,6 +3181,7 @@ public class GeoPackageManagerFragment extends Fragment implements
                 //createGeoPackage();
                 CreateFromTemplate(getActivity());
                 break;
+            /*
             case it.uniurb.beedip.R.id.clear_selected_tables:
                 //TODO: mettere a posto questa parte
                 if (selectedDataBase != null) {
@@ -3188,6 +3189,7 @@ public class GeoPackageManagerFragment extends Fragment implements
                 }
                 update();
                 break;
+                */
             default:
                 handled = false;
                 break;
