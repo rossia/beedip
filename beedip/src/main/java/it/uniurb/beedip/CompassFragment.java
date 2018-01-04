@@ -101,6 +101,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     //private Bussola bussola;
     //private Inclinometer inclinometro;
     //private CharSequence choices[];
+    private int prevDipangle;
     private boolean msrLock;
     private boolean cfState;
     //private boolean allowToSave;
@@ -623,77 +624,142 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             else
                 toDisplay = Math.abs(z);
 
+            //Offsetting dipAngle for animation
+            dipAngle = dipAngle + 180;
+            if(dipAngle >= 360)
+                dipAngle = dipAngle - 360;
+            if((dipAngle > 0) && (dipAngle < 180)) {
+                //dipAngle = dipAngle + 180;
+                dipAngle = 180 - dipAngle;
+                dipAngle = 180 + dipAngle;
+            }
+            else if((dipAngle > 180) && (dipAngle < 360)) {
+                //dipAngle = dipAngle - 180;
+                dipAngle = dipAngle - 180;
+                dipAngle = 180 - dipAngle;            }
 
-            RotateAnimation ra_clino = new RotateAnimation(-currentDipdirection, -dipAngle, Animation.RELATIVE_TO_SELF,
+
+            RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                     0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
             ra_clino.setDuration(1000);
             ra_clino.setFillAfter(true);
+            prevDipangle = dipAngle;
             currentDipdirection = distance;
             currentInlcination = toDisplay;
-            displayValues.setText(currentInlcination + "/" + currentDipdirection);
+            //displayValues.setText(currentInlcination + "/" + currentDipdirection);
 
-            /*if(cfState) {
-                if((!isUpright) && (dipAngle > 3) && (dipAngle <= 30)){
+            if(cfState) {
+                if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     bIndicator.setImageResource(R.drawable.sho);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
                 }
-                else if((!isUpright) && (dipAngle > 30) && (dipAngle <= 60)){
+                else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     bIndicator.setImageResource(R.drawable.mid);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
                 }
-                else if((!isUpright) && (dipAngle > 60) && (dipAngle <= 89)){
+                else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
+                        (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
                     bIndicator.setImageResource(R.drawable.nlong);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
                 }
-                else if((isUpright) && (dipAngle > 3) && (dipAngle <= 30)){
+                else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     bIndicator.setImageResource(R.drawable.rlong);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
                 }
-                else if((isUpright) && (dipAngle > 30) && (dipAngle <= 60)){
+                else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     bIndicator.setImageResource(R.drawable.rmid);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
                 }
-                else if((isUpright) && (dipAngle > 60) && (dipAngle <= 89)){
+                else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     bIndicator.setImageResource(R.drawable.rsho);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
                 }
-                else if(dipAngle <= 3){
+                else if((currentInlcination <= 3) && (currentInlcination >= 0)){
                     bIndicator.setImageResource(R.drawable.cross);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
+                    currentDipdirection = 0;
                 }
-                else if(dipAngle == 90){
+                else if(currentInlcination == 90){
                     bIndicator.setImageResource(R.drawable.point);
+                    bIndicator.getLayoutParams().width = 150;
+                    bIndicator.getLayoutParams().height = 150;
+                    bIndicator.requestLayout();
                 }
                 bIndicator.setAnimation(ra_clino);
                 bIndicator.startAnimation(ra_clino);
                 //Clino text-printed values
-                displayValues.setText( y + "/" + dipAngle);
-                sendMeasurementData(compassMesurement);
+                displayValues.setText(currentInlcination + "/" + currentDipdirection);
+                //sendMeasurementData(compassMesurement);
             }
             else{
-                if((!isUpright) && (dipAngle > 3) && (dipAngle <= 30)){
+                if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     lIndicator.setImageResource(R.drawable.sho);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
-                else if((!isUpright) && (dipAngle > 30) && (dipAngle <= 60)){
+                else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     lIndicator.setImageResource(R.drawable.mid);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
-                else if((!isUpright) && (dipAngle > 60) && (dipAngle <= 89)){
+                else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     lIndicator.setImageResource(R.drawable.nlong);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
-                else if((isUpright) && (dipAngle > 3) && (dipAngle <= 30)){
+                else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     lIndicator.setImageResource(R.drawable.rlong);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
-                else if((isUpright) && (dipAngle > 30) && (dipAngle <= 60)){
+                else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     lIndicator.setImageResource(R.drawable.rmid);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
-                else if((isUpright) && (dipAngle > 60) && (dipAngle <= 89)){
+                else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     lIndicator.setImageResource(R.drawable.rsho);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
-                else if(dipAngle <= 3){
+                else if((currentInlcination <= 3) && (currentInlcination >= 0)){
                     lIndicator.setImageResource(R.drawable.cross);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
-                else if(dipAngle == 90){
+                else if(currentInlcination == 90){
                     lIndicator.setImageResource(R.drawable.point);
+                    lIndicator.getLayoutParams().width = 35;
+                    lIndicator.getLayoutParams().height = 35;
+                    lIndicator.requestLayout();
                 }
                 lIndicator.setAnimation(ra_clino);
                 lIndicator.startAnimation(ra_clino);
                 //Clino text-printed values
-                displayValues.setText( y + "/" + dipAngle);
-                sendMeasurementData(compassMesurement);
-            }*/
+                //displayValues.setText( y + "/" + dipAngle);
+                //sendMeasurementData(compassMesurement);
+            }
         }
     }
 
