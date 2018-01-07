@@ -137,6 +137,8 @@ import mil.nga.wkb.geom.LineString;
 import mil.nga.wkb.util.GeometryPrinter;
 import it.uniurb.beedip.data.CompassMeasurement;
 
+import static it.uniurb.beedip.R.string.dip_field_name;
+
 /**
  * GeoPackage Map Fragment
  *
@@ -928,8 +930,8 @@ public class GeoPackageMapFragment extends Fragment implements
                         {
                             Integer immersionVal = new Integer(compassMeasurement.getDip());
                             Integer inclinazioVal = new Integer(compassMeasurement.getDipDirection());
-                            newPoint.setValue("immersione",immersionVal);
-                            newPoint.setValue("inclinazio",inclinazioVal);
+                            newPoint.setValue(dip_field_name,immersionVal);
+                            newPoint.setValue("dip_direction_field_name",inclinazioVal);
                         }
 
                         GeoPackageGeometryData pointGeomData = new GeoPackageGeometryData(

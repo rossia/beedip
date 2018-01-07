@@ -827,22 +827,19 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 pointGeomData.setGeometry(point);
                 newPoint.setGeometry(pointGeomData);
                 featureDao.insert(newPoint);
-                active.setModified(true);
                 Contents contents = featureDao.getGeometryColumns().getContents();
                 contents.setLastChange(new Date());
                 ContentsDao contentsDao = geoPackage.getContentsDao();
                 contentsDao.update(contents);
+                active.setModified(true);
             } catch (Exception e) {
-                if (GeoPackageUtils.isFutureSQLiteException(e)) {
+
                     GeoPackageUtils
                             .showMessage(
                                     getActivity(),
                                     getString(R.string.edit_features_save_label),
-                                    "GeoPackage was created using a more recent SQLite version unsupported by Android");
-                } else {
-                    GeoPackageUtils.showMessage(getActivity(),
-                            getString(R.string.edit_features_save_label) + " ", e.getMessage());
-                }
+                                    "GeoPackage error saving");
+
             } finally {
                 if (geoPackage != null) {
                     geoPackage.close();
