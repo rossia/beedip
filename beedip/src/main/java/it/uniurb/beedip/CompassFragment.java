@@ -659,6 +659,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     dipAngle = dipAngle - 360;
             }
 
+            //This fixes the blink in the animation from 359 to 1 and from 1 to 359
+            if((prevDipangle > 350) && (dipAngle < 10))
+                prevDipangle = 1;
+            else if((prevDipangle < 10) && (dipAngle > 350))
+                prevDipangle = 359;
+
+
             RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                     0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
             ra_clino.setDuration(300);
