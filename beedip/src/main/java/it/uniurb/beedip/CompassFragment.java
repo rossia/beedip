@@ -617,7 +617,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             }
 
             //Finding out if phone is upside down and telling related values
-            if(Math.abs(Math.round(sensorEvent.values[1])) > 90){
+            if((Math.abs(Math.round(sensorEvent.values[1])) > 90)){
                 upsideDown = true;
                 dipAngle = dipAngle + 180;
                 if(dipAngle >= 360)
@@ -659,16 +659,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     dipAngle = dipAngle - 360;
             }
 
-
             RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                     0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
             ra_clino.setDuration(300);
             ra_clino.setFillAfter(true);
-            if(upsideDown){
+            /*if(upsideDown){
                 dipAngle = dipAngle - 180;
                 if(dipAngle < 0)
                     dipAngle = 360 + dipAngle;
-            }
+            }*/
             prevDipangle = dipAngle;
             currentDipdirection = distance;
             currentInlcination = toDisplay;
@@ -725,10 +724,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     bIndicator.getLayoutParams().height = 150;
                     bIndicator.requestLayout();
                 }
-                bIndicator.setAnimation(ra_clino);
-                bIndicator.startAnimation(ra_clino);
+                    bIndicator.setAnimation(ra_clino);
+                    bIndicator.startAnimation(ra_clino);
+
                 //Clino text-printed values
-                displayValues.setText(currentInlcination + "/" + currentDipdirection);
+                displayValues.setText(currentInlcination + "/" + currentDipdirection); //CAMBIARE ASSOLUTAMENTE
                 //sendMeasurementData(compassMesurement);
             }
             else{
@@ -780,8 +780,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     lIndicator.getLayoutParams().height = 35;
                     lIndicator.requestLayout();
                 }
-                lIndicator.setAnimation(ra_clino);
-                lIndicator.startAnimation(ra_clino);
+                if(dipAngle != 180) {
+                    lIndicator.setAnimation(ra_clino);
+                    lIndicator.startAnimation(ra_clino);
+                }
                 //Clino text-printed values
                 //displayValues.setText( y + "/" + dipAngle);
                 //sendMeasurementData(compassMesurement);
