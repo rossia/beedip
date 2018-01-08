@@ -1,6 +1,7 @@
 package it.uniurb.beedip;
 
 import android.*;
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -207,7 +208,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         note = (Button) getView().findViewById(R.id.note);
         save = (Button) getView().findViewById(R.id.save);
         //Setting initial background color of buttons
-        accuracy.setBackgroundColor(Color.GREEN);
+        //accuracy.setBackgroundColor(Color.GREEN);
+        accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -446,10 +448,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onClick(View arg0) {
                 //Changing button color
-                if (!isAccurate)
-                    accuracy.setBackgroundColor(Color.RED);
-                else
-                    accuracy.setBackgroundColor(Color.GREEN);
+                if (!isAccurate) {
+                    //accuracy.setBackgroundColor(Color.RED);
+                    accuracy.setBackgroundColor(Color.parseColor("#e11919"));
+                }
+                else{
+                    //accuracy.setBackgroundColor(Color.GREEN);
+                    accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+                }
                 isAccurate = !isAccurate;
                 if (currentMeasure != null) {
                     currentMeasure.setAccurate(isAccurate);
@@ -528,7 +534,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Acquiring values
             degree = Math.round(sensorEvent.values[0]);
             RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_comp.setDuration(1000);
+            ra_comp.setDuration(300);
             ra_comp.setFillAfter(true);
             currentCompass = degree;
 
@@ -545,6 +551,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //CLINOMETER
             //Clinometer animation
             //Acquiring values
+            boolean upsideDown = false;
+            //int usOffset;
             int x = Math.round(sensorEvent.values[0]);
             int y = Math.round(sensorEvent.values[1]);
             int z = Math.round(sensorEvent.values[2]);
@@ -596,10 +604,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             } else if ((y < 0) && (z < 0)) {
                 //III
                 dipAngle = 90 - dipAngle + 180;
-            }
-            //To set in order to consider the tollerance 0 < y < 3
-            //and 0 < z < 3
-            else if ((y == 0) && (z > 0)) {
+            }else if ((y == 0) && (z > 0)) {
                 dipAngle = 90;
             } else if ((y == 0) && (z < 0)) {
                 dipAngle = 270;
@@ -611,6 +616,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 dipAngle = 0;
             }
 
+            //Finding out if phone is upside down and telling related values
+            if(Math.abs(Math.round(sensorEvent.values[1])) > 90){
+                upsideDown = true;
+                dipAngle = dipAngle + 180;
+                if(dipAngle >= 360)
+                    dipAngle = dipAngle - 360;
+
+            }
+
             distance = dipAngle - x;
             //dipAngle = direction of the phone's inclination
             //Distance dipDirection
@@ -618,17 +632,17 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 distance = 360 - x + dipAngle;
             distance = Math.abs(360 - distance);
 
+
             //Calculating inclination to display
-            if (Math.abs(y) > Math.abs(z))
-                toDisplay = Math.abs(y);
-            else
-                toDisplay = Math.abs(z);
+            toDisplay = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(y1)), 2.0) +Math.pow(Math.sin(Math.toRadians(z1)), 2.0)))));
+            if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
+                toDisplay = 90;
 
             //Offsetting dipAngle for animation
             dipAngle = dipAngle + 180;
             if(dipAngle >= 360)
                 dipAngle = dipAngle - 360;
-            if((dipAngle > 0) && (dipAngle < 180)) {
+            if((dipAngle > 0) && (dipAngle <= 180)) {
                 //dipAngle = dipAngle + 180;
                 dipAngle = 180 - dipAngle;
                 dipAngle = 180 + dipAngle;
@@ -636,13 +650,25 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             else if((dipAngle > 180) && (dipAngle < 360)) {
                 //dipAngle = dipAngle - 180;
                 dipAngle = dipAngle - 180;
-                dipAngle = 180 - dipAngle;            }
+                dipAngle = 180 - dipAngle;
+            }
+
+            if(upsideDown) {
+                dipAngle = dipAngle + 180;
+                if(dipAngle >= 360)
+                    dipAngle = dipAngle - 360;
+            }
 
 
             RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                     0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_clino.setDuration(1000);
+            ra_clino.setDuration(300);
             ra_clino.setFillAfter(true);
+            if(upsideDown){
+                dipAngle = dipAngle - 180;
+                if(dipAngle < 0)
+                    dipAngle = 360 + dipAngle;
+            }
             prevDipangle = dipAngle;
             currentDipdirection = distance;
             currentInlcination = toDisplay;
@@ -879,7 +905,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //type.setText(currentType);
         currentRockunit = null;
         isAccurate = true;
-        accuracy.setBackgroundColor(Color.GREEN);
+        accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
     }
 
     private void getLocation(){
@@ -900,11 +926,32 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
         }
+        //Getting coarse position.
+        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new android.location.LocationListener(){
+            @Override
+            public void onLocationChanged(Location location) {
+                lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        });
+        //If able to, overwriting coarse position with finer one.
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 60, 2, new android.location.LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                //lat = location.getLatitude();
-                //lon = location.getLongitude();
                 lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
             }
 
@@ -926,7 +973,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     }
 
     public void turnOnGPS(){
-        //Request to turn on GPS if it's off
+        //Request to turn on GPS if it's offline.
         int off = 0;
         try {
             off = Settings.Secure.getInt(getActivity().getContentResolver(), Settings.Secure.LOCATION_MODE);
@@ -981,6 +1028,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Requesting the permission to the user
             //android.Manifest.permission.ACCESS_FINE_LOCATION
             ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},1);
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},1);
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
