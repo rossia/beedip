@@ -111,6 +111,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     String tmp;
     ImageView lIndicator;
     ImageView bIndicator;
+    ImageView pLock;
     TextView displayValues;
     ImageButton bigClockFace;
     ImageButton littleClockFace;
@@ -191,6 +192,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         lIndicator = (ImageView) getView().findViewById(R.id.littleIndicator);
         bIndicator = (ImageView) getView().findViewById(R.id.bigIndicator);
+        pLock = (ImageView) getView().findViewById(R.id.padLock);
         //back = (ImageView) getView().findViewById(R.id.quadrante);
         displayValues = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
         //SensorManager's initialization (It allow to declare sensor variables)
@@ -212,6 +214,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //Setting initial background color of buttons
         //accuracy.setBackgroundColor(Color.GREEN);
         accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+        pLock.setVisibility(View.GONE);
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -283,8 +286,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 //Lock the current result
                if (currentMeasure == null) {
                    currentMeasure = new CompassMeasurement(currentInlcination, currentDipdirection, selectedYounging, isAccurate);
+                   pLock.setVisibility(View.VISIBLE);
                } else {
                    currentMeasure = null;
+                   pLock.setVisibility(View.GONE);
                }
                 if (!isUpright) {
                     selectedYounging = CompassMeasurement.Younging.OVERTURNED;
