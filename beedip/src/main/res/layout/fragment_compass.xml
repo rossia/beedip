@@ -178,8 +178,9 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@+id/bigClockface"
         android:layout_alignTop="@+id/littleClockface"
-        android:layout_toLeftOf="@+id/save"
-        android:src="@drawable/padlock" />
+        android:src="@drawable/padlock"
+        android:layout_toLeftOf="@+id/bigClockface"
+        android:layout_toStartOf="@+id/bigClockface" />
 
 
 </RelativeLayout>
