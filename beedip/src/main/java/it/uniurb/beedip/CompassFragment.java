@@ -331,6 +331,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 tmp = input.getText().toString();
                                 if (!tmp.equals(""))
                                     currentRockunit = tmp;
+                                else
+                                    currentRockunit = null;
 
                             }
                         });
@@ -376,6 +378,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 tmp = input.getText().toString();
                                 if (!tmp.equals(""))
                                     currentSurveyor = tmp;
+                                else
+                                    currentSurveyor = null;
 
                             }
                         });
@@ -421,6 +425,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 tmp = input.getText().toString();
                                 if (!tmp.equals(""))
                                     currentLocation = tmp;
+                                else
+                                    currentLocation = null;
                             }
                         });
 
@@ -511,6 +517,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         tmp = input.getText().toString();
                         if (!tmp.equals(""))
                             currentNotes = tmp;
+                        else
+                            currentNotes = null;
                     }
                 });
 
@@ -575,6 +583,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Clinometer animation
             //Acquiring values
             boolean upsideDown = false;
+            boolean avoidAnimation = false;
             //int usOffset;
             int x = Math.round(sensorEvent.values[0]);
             int y = Math.round(sensorEvent.values[1]);
@@ -707,56 +716,40 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             if(cfState) {
                 if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     bIndicator.setImageResource(R.drawable.sho);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     bIndicator.setImageResource(R.drawable.mid);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
                         (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
                     bIndicator.setImageResource(R.drawable.nlong);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     bIndicator.setImageResource(R.drawable.rlong);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     bIndicator.setImageResource(R.drawable.rmid);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     bIndicator.setImageResource(R.drawable.rsho);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((currentInlcination <= 3) && (currentInlcination >= 0)){
                     bIndicator.setImageResource(R.drawable.cross);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
+                    bIndicator.clearAnimation();
                     currentDipdirection = 0;
+                    avoidAnimation = true;
                 }
                 else if(currentInlcination == 90){
                     bIndicator.setImageResource(R.drawable.point);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
+                bIndicator.getLayoutParams().width = 150;
+                bIndicator.getLayoutParams().height = 150;
+                bIndicator.requestLayout();
+
+                if(avoidAnimation != true) {
                     bIndicator.setAnimation(ra_clino);
                     bIndicator.startAnimation(ra_clino);
+                }
 
                 //Clino text-printed values
                 displayValues.setText(currentInlcination + "/" + currentDipdirection); //CAMBIARE ASSOLUTAMENTE
@@ -765,53 +758,36 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             else{
                 if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     lIndicator.setImageResource(R.drawable.sho);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     lIndicator.setImageResource(R.drawable.mid);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     lIndicator.setImageResource(R.drawable.nlong);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     lIndicator.setImageResource(R.drawable.rlong);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     lIndicator.setImageResource(R.drawable.rmid);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     lIndicator.setImageResource(R.drawable.rsho);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((currentInlcination <= 3) && (currentInlcination >= 0)){
                     lIndicator.setImageResource(R.drawable.cross);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
+                    lIndicator.clearAnimation();
+                    avoidAnimation = true;
                 }
                 else if(currentInlcination == 90){
                     lIndicator.setImageResource(R.drawable.point);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
+
                 }
-                if(dipAngle != 180) {
+                lIndicator.getLayoutParams().width = 35;
+                lIndicator.getLayoutParams().height = 35;
+                lIndicator.requestLayout();
+
+                if(avoidAnimation != true) {
                     lIndicator.setAnimation(ra_clino);
                     lIndicator.startAnimation(ra_clino);
                 }
