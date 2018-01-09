@@ -24,8 +24,10 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -309,15 +311,19 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
                 alertDialog.setTitle("Rock Unit");
                 alertDialog.setMessage("Write a rock unit");
-                if (currentRockunit != null)
-                    alertDialog.setMessage(currentRockunit);
+
 
                 final EditText input = new EditText(getActivity());
+                if (currentRockunit != null) {
+                    input.setText(currentRockunit);
+                    input.setSelectAllOnFocus(true);
+                }
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
                 input.setLayoutParams(lp);
                 alertDialog.setView(input);
+
 
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
@@ -335,7 +341,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                alertDialog.show();
+                //alertDialog.show();
+                AlertDialog dialog = alertDialog.create();
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.show();
             }
 
         });
@@ -348,10 +357,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
                 alertDialog.setTitle("Surveyor");
                 alertDialog.setMessage("Write the Surveyor's name");
-                if (currentSurveyor != null)
-                    alertDialog.setMessage(currentSurveyor);
+
 
                 final EditText input = new EditText(getActivity());
+                if (currentSurveyor != null) {
+                    input.setText(currentSurveyor);
+                    input.setSelectAllOnFocus(true);
+                }
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
@@ -374,7 +386,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                alertDialog.show();
+                //alertDialog.show();
+                AlertDialog dialog = alertDialog.create();
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.show();
             }
 
         });
@@ -387,10 +402,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
                 alertDialog.setTitle("Location");
                 alertDialog.setMessage("Write the Location.");
-                if (currentLocation != null)
-                    alertDialog.setMessage(currentLocation);
 
                 final EditText input = new EditText(getActivity());
+                if (currentLocation != null) {
+                    input.setText(currentLocation);
+                    input.setSelectAllOnFocus(true);
+                }
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
@@ -413,7 +430,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                alertDialog.show();
+                //alertDialog.show();
+                AlertDialog dialog = alertDialog.create();
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.show();
             }
 
         });
@@ -471,19 +491,20 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle("Comment");
-                if (currentNotes != null)
-                    builder.setMessage(currentNotes);
+                builder.setTitle("Notes");
 
                 final EditText input = new EditText(getActivity());
-
-                input.setText("Leave a comment.");
+                input.setText("Leave a note.");
                 input.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
                 input.setSingleLine(false);
                 input.setLines(5);
                 input.setMaxLines(5);
                 input.setGravity(Gravity.LEFT | Gravity.TOP);
                 builder.setView(input);
+                if (currentNotes != null) {
+                    input.setText(currentNotes);
+                }
+                input.setSelectAllOnFocus(true);
 
                 builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
@@ -501,6 +522,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                             }
                         });
                 AlertDialog alert = builder.create();
+                alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
                 alert.show();
             }
 
@@ -534,8 +556,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Acquiring values
             degree = Math.round(sensorEvent.values[0]);
             RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_comp.setDuration(300);
+            ra_comp.setDuration(4000);
             ra_comp.setFillAfter(true);
+            ra_comp.setRepeatCount(Animation.INFINITE);
             currentCompass = degree;
 
             if (cfState) {
@@ -659,17 +682,18 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     dipAngle = dipAngle - 360;
             }
 
-            //This fixes the blink in the animation from 359 to 1 and from 1 to 359
+            /*This fixes the blink in the animation from 359 to 1 and from 1 to 359
             if((prevDipangle > 350) && (dipAngle < 10))
                 prevDipangle = 1;
             else if((prevDipangle < 10) && (dipAngle > 350))
-                prevDipangle = 359;
+                prevDipangle = 359;*/
 
 
             RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                     0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_clino.setDuration(300);
+            ra_clino.setDuration(4000);
             ra_clino.setFillAfter(true);
+            ra_clino.setRepeatCount(Animation.INFINITE);
             /*if(upsideDown){
                 dipAngle = dipAngle - 180;
                 if(dipAngle < 0)
@@ -991,8 +1015,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         }
         if(off==0){
             AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
-            alertDialog.setTitle("GPS");
-            alertDialog.setMessage("Do you wish to turn on your GPS?");
+            alertDialog.setTitle("Position");
+            alertDialog.setMessage("Do you wish to upload your position?");
             if (currentSurveyor != null)
                 alertDialog.setMessage(currentSurveyor);
 
