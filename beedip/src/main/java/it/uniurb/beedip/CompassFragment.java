@@ -247,6 +247,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         });
         type.setEnabled(false);
         save.setEnabled(false);
+        save.setText("");
 
 
 
@@ -822,6 +823,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             editFeaturesTable = features.get(0);
             type.setText(editFeaturesTable.toString());
             save.setEnabled(true);
+            save.setText("Save");
         } else {
 
         }
