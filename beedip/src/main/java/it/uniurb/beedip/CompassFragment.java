@@ -1,6 +1,7 @@
 package it.uniurb.beedip;
 
 import android.*;
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -23,8 +24,10 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -108,6 +111,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     String tmp;
     ImageView lIndicator;
     ImageView bIndicator;
+    ImageView pLock;
     TextView displayValues;
     ImageButton bigClockFace;
     ImageButton littleClockFace;
@@ -188,6 +192,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         lIndicator = (ImageView) getView().findViewById(R.id.littleIndicator);
         bIndicator = (ImageView) getView().findViewById(R.id.bigIndicator);
+        pLock = (ImageView) getView().findViewById(R.id.padLock);
         //back = (ImageView) getView().findViewById(R.id.quadrante);
         displayValues = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
         //SensorManager's initialization (It allow to declare sensor variables)
@@ -207,7 +212,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         note = (Button) getView().findViewById(R.id.note);
         save = (Button) getView().findViewById(R.id.save);
         //Setting initial background color of buttons
-        accuracy.setBackgroundColor(Color.GREEN);
+        //accuracy.setBackgroundColor(Color.GREEN);
+        accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+        pLock.setVisibility(View.GONE);
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -243,6 +250,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         });
         type.setEnabled(false);
         save.setEnabled(false);
+        save.setText("");
 
 
 
@@ -278,8 +286,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 //Lock the current result
                if (currentMeasure == null) {
                    currentMeasure = new CompassMeasurement(currentInlcination, currentDipdirection, selectedYounging, isAccurate);
+                   pLock.setVisibility(View.VISIBLE);
                } else {
                    currentMeasure = null;
+                   pLock.setVisibility(View.GONE);
                }
                 if (!isUpright) {
                     selectedYounging = CompassMeasurement.Younging.OVERTURNED;
@@ -307,15 +317,19 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
                 alertDialog.setTitle("Rock Unit");
                 alertDialog.setMessage("Write a rock unit");
-                if (currentRockunit != null)
-                    alertDialog.setMessage(currentRockunit);
+
 
                 final EditText input = new EditText(getActivity());
+                if (currentRockunit != null) {
+                    input.setText(currentRockunit);
+                    input.setSelectAllOnFocus(true);
+                }
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
                 input.setLayoutParams(lp);
                 alertDialog.setView(input);
+
 
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
@@ -323,6 +337,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 tmp = input.getText().toString();
                                 if (!tmp.equals(""))
                                     currentRockunit = tmp;
+                                else
+                                    currentRockunit = null;
 
                             }
                         });
@@ -333,7 +349,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                alertDialog.show();
+                //alertDialog.show();
+                AlertDialog dialog = alertDialog.create();
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.show();
             }
 
         });
@@ -346,10 +365,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
                 alertDialog.setTitle("Surveyor");
                 alertDialog.setMessage("Write the Surveyor's name");
-                if (currentSurveyor != null)
-                    alertDialog.setMessage(currentSurveyor);
+
 
                 final EditText input = new EditText(getActivity());
+                if (currentSurveyor != null) {
+                    input.setText(currentSurveyor);
+                    input.setSelectAllOnFocus(true);
+                }
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
@@ -362,6 +384,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 tmp = input.getText().toString();
                                 if (!tmp.equals(""))
                                     currentSurveyor = tmp;
+                                else
+                                    currentSurveyor = null;
 
                             }
                         });
@@ -372,7 +396,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                alertDialog.show();
+                //alertDialog.show();
+                AlertDialog dialog = alertDialog.create();
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.show();
             }
 
         });
@@ -385,10 +412,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
                 alertDialog.setTitle("Location");
                 alertDialog.setMessage("Write the Location.");
-                if (currentLocation != null)
-                    alertDialog.setMessage(currentLocation);
 
                 final EditText input = new EditText(getActivity());
+                if (currentLocation != null) {
+                    input.setText(currentLocation);
+                    input.setSelectAllOnFocus(true);
+                }
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
@@ -402,6 +431,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 tmp = input.getText().toString();
                                 if (!tmp.equals(""))
                                     currentLocation = tmp;
+                                else
+                                    currentLocation = null;
                             }
                         });
 
@@ -411,7 +442,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                alertDialog.show();
+                //alertDialog.show();
+                AlertDialog dialog = alertDialog.create();
+                dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.show();
             }
 
         });
@@ -446,10 +480,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onClick(View arg0) {
                 //Changing button color
-                if (!isAccurate)
-                    accuracy.setBackgroundColor(Color.RED);
-                else
-                    accuracy.setBackgroundColor(Color.GREEN);
+                if (!isAccurate) {
+                    //accuracy.setBackgroundColor(Color.RED);
+                    accuracy.setBackgroundColor(Color.parseColor("#e11919"));
+                }
+                else{
+                    //accuracy.setBackgroundColor(Color.GREEN);
+                    accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+                }
                 isAccurate = !isAccurate;
                 if (currentMeasure != null) {
                     currentMeasure.setAccurate(isAccurate);
@@ -465,25 +503,28 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle("Comment");
-                if (currentNotes != null)
-                    builder.setMessage(currentNotes);
+                builder.setTitle("Notes");
 
                 final EditText input = new EditText(getActivity());
-
-                input.setText("Leave a comment.");
+                input.setText("Leave a note.");
                 input.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
                 input.setSingleLine(false);
                 input.setLines(5);
                 input.setMaxLines(5);
                 input.setGravity(Gravity.LEFT | Gravity.TOP);
                 builder.setView(input);
+                if (currentNotes != null) {
+                    input.setText(currentNotes);
+                }
+                input.setSelectAllOnFocus(true);
 
                 builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         tmp = input.getText().toString();
                         if (!tmp.equals(""))
                             currentNotes = tmp;
+                        else
+                            currentNotes = null;
                     }
                 });
 
@@ -495,6 +536,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                             }
                         });
                 AlertDialog alert = builder.create();
+                alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
                 alert.show();
             }
 
@@ -528,8 +570,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Acquiring values
             degree = Math.round(sensorEvent.values[0]);
             RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_comp.setDuration(1000);
+            ra_comp.setDuration(4000);
             ra_comp.setFillAfter(true);
+            ra_comp.setRepeatCount(Animation.INFINITE);
             currentCompass = degree;
 
             if (cfState) {
@@ -545,6 +588,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //CLINOMETER
             //Clinometer animation
             //Acquiring values
+            boolean upsideDown = false;
+            boolean avoidAnimation = false;
+            //int usOffset;
             int x = Math.round(sensorEvent.values[0]);
             int y = Math.round(sensorEvent.values[1]);
             int z = Math.round(sensorEvent.values[2]);
@@ -596,10 +642,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             } else if ((y < 0) && (z < 0)) {
                 //III
                 dipAngle = 90 - dipAngle + 180;
-            }
-            //To set in order to consider the tollerance 0 < y < 3
-            //and 0 < z < 3
-            else if ((y == 0) && (z > 0)) {
+            }else if ((y == 0) && (z > 0)) {
                 dipAngle = 90;
             } else if ((y == 0) && (z < 0)) {
                 dipAngle = 270;
@@ -611,6 +654,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 dipAngle = 0;
             }
 
+            //Finding out if phone is upside down and telling related values
+            if((Math.abs(Math.round(sensorEvent.values[1])) > 90)){
+                upsideDown = true;
+                dipAngle = dipAngle + 180;
+                if(dipAngle >= 360)
+                    dipAngle = dipAngle - 360;
+
+            }
+
             distance = dipAngle - x;
             //dipAngle = direction of the phone's inclination
             //Distance dipDirection
@@ -618,17 +670,17 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 distance = 360 - x + dipAngle;
             distance = Math.abs(360 - distance);
 
+
             //Calculating inclination to display
-            if (Math.abs(y) > Math.abs(z))
-                toDisplay = Math.abs(y);
-            else
-                toDisplay = Math.abs(z);
+            toDisplay = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(y1)), 2.0) +Math.pow(Math.sin(Math.toRadians(z1)), 2.0)))));
+            if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
+                toDisplay = 90;
 
             //Offsetting dipAngle for animation
             dipAngle = dipAngle + 180;
             if(dipAngle >= 360)
                 dipAngle = dipAngle - 360;
-            if((dipAngle > 0) && (dipAngle < 180)) {
+            if((dipAngle > 0) && (dipAngle <= 180)) {
                 //dipAngle = dipAngle + 180;
                 dipAngle = 180 - dipAngle;
                 dipAngle = 180 + dipAngle;
@@ -636,13 +688,32 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             else if((dipAngle > 180) && (dipAngle < 360)) {
                 //dipAngle = dipAngle - 180;
                 dipAngle = dipAngle - 180;
-                dipAngle = 180 - dipAngle;            }
+                dipAngle = 180 - dipAngle;
+            }
+
+            if(upsideDown) {
+                dipAngle = dipAngle + 180;
+                if(dipAngle >= 360)
+                    dipAngle = dipAngle - 360;
+            }
+
+            /*This fixes the blink in the animation from 359 to 1 and from 1 to 359
+            if((prevDipangle > 350) && (dipAngle < 10))
+                prevDipangle = 1;
+            else if((prevDipangle < 10) && (dipAngle > 350))
+                prevDipangle = 359;*/
 
 
             RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                     0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_clino.setDuration(1000);
+            ra_clino.setDuration(4000);
             ra_clino.setFillAfter(true);
+            ra_clino.setRepeatCount(Animation.INFINITE);
+            /*if(upsideDown){
+                dipAngle = dipAngle - 180;
+                if(dipAngle < 0)
+                    dipAngle = 360 + dipAngle;
+            }*/
             prevDipangle = dipAngle;
             currentDipdirection = distance;
             currentInlcination = toDisplay;
@@ -651,111 +722,81 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             if(cfState) {
                 if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     bIndicator.setImageResource(R.drawable.sho);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     bIndicator.setImageResource(R.drawable.mid);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
                         (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
                     bIndicator.setImageResource(R.drawable.nlong);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     bIndicator.setImageResource(R.drawable.rlong);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     bIndicator.setImageResource(R.drawable.rmid);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     bIndicator.setImageResource(R.drawable.rsho);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
                 else if((currentInlcination <= 3) && (currentInlcination >= 0)){
                     bIndicator.setImageResource(R.drawable.cross);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
+                    bIndicator.clearAnimation();
                     currentDipdirection = 0;
+                    avoidAnimation = true;
                 }
                 else if(currentInlcination == 90){
                     bIndicator.setImageResource(R.drawable.point);
-                    bIndicator.getLayoutParams().width = 150;
-                    bIndicator.getLayoutParams().height = 150;
-                    bIndicator.requestLayout();
                 }
-                bIndicator.setAnimation(ra_clino);
-                bIndicator.startAnimation(ra_clino);
+                bIndicator.getLayoutParams().width = 150;
+                bIndicator.getLayoutParams().height = 150;
+                bIndicator.requestLayout();
+
+                if(avoidAnimation != true) {
+                    bIndicator.setAnimation(ra_clino);
+                    bIndicator.startAnimation(ra_clino);
+                }
+
                 //Clino text-printed values
-                displayValues.setText(currentInlcination + "/" + currentDipdirection);
+                displayValues.setText(currentInlcination + "/" + currentDipdirection); //CAMBIARE ASSOLUTAMENTE
                 //sendMeasurementData(compassMesurement);
             }
             else{
                 if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     lIndicator.setImageResource(R.drawable.sho);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     lIndicator.setImageResource(R.drawable.mid);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     lIndicator.setImageResource(R.drawable.nlong);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                     lIndicator.setImageResource(R.drawable.rlong);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                     lIndicator.setImageResource(R.drawable.rmid);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                     lIndicator.setImageResource(R.drawable.rsho);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
                 }
                 else if((currentInlcination <= 3) && (currentInlcination >= 0)){
                     lIndicator.setImageResource(R.drawable.cross);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
+                    lIndicator.clearAnimation();
+                    avoidAnimation = true;
                 }
                 else if(currentInlcination == 90){
                     lIndicator.setImageResource(R.drawable.point);
-                    lIndicator.getLayoutParams().width = 35;
-                    lIndicator.getLayoutParams().height = 35;
-                    lIndicator.requestLayout();
+
                 }
-                lIndicator.setAnimation(ra_clino);
-                lIndicator.startAnimation(ra_clino);
+                lIndicator.getLayoutParams().width = 35;
+                lIndicator.getLayoutParams().height = 35;
+                lIndicator.requestLayout();
+
+                if(avoidAnimation != true) {
+                    lIndicator.setAnimation(ra_clino);
+                    lIndicator.startAnimation(ra_clino);
+                }
                 //Clino text-printed values
                 //displayValues.setText( y + "/" + dipAngle);
                 //sendMeasurementData(compassMesurement);
@@ -787,6 +828,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             editFeaturesTable = features.get(0);
             type.setText(editFeaturesTable.toString());
             save.setEnabled(true);
+            save.setText("Save");
         } else {
 
         }
@@ -876,7 +918,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //type.setText(currentType);
         currentRockunit = null;
         isAccurate = true;
-        accuracy.setBackgroundColor(Color.GREEN);
+        accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
     }
 
     private void getLocation(){
@@ -897,11 +939,32 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
         }
+        //Getting coarse position.
+        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new android.location.LocationListener(){
+            @Override
+            public void onLocationChanged(Location location) {
+                lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        });
+        //If able to, overwriting coarse position with finer one.
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 60, 2, new android.location.LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                //lat = location.getLatitude();
-                //lon = location.getLongitude();
                 lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
             }
 
@@ -923,7 +986,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     }
 
     public void turnOnGPS(){
-        //Request to turn on GPS if it's off
+        //Request to turn on GPS if it's offline.
         int off = 0;
         try {
             off = Settings.Secure.getInt(getActivity().getContentResolver(), Settings.Secure.LOCATION_MODE);
@@ -932,8 +995,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         }
         if(off==0){
             AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
-            alertDialog.setTitle("GPS");
-            alertDialog.setMessage("Do you wish to turn on your GPS?");
+            alertDialog.setTitle("Position");
+            alertDialog.setMessage("Do you wish to upload your position?");
             if (currentSurveyor != null)
                 alertDialog.setMessage(currentSurveyor);
 
@@ -978,6 +1041,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Requesting the permission to the user
             //android.Manifest.permission.ACCESS_FINE_LOCATION
             ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},1);
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},1);
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding

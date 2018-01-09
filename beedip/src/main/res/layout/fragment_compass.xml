@@ -23,6 +23,9 @@
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="@string/rock_unit"
+        android:background="@drawable/button_shape"
+        style="@style/ButtonStyle"
+        android:layout_marginTop="12dp"
         android:layout_below="@+id/surveyor"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
@@ -34,7 +37,10 @@
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="@string/locality"
-        android:layout_below="@+id/testo"
+        android:background="@drawable/button_shape"
+        style="@style/ButtonStyle"
+        android:layout_alignBaseline="@+id/surveyor"
+        android:layout_alignBottom="@+id/surveyor"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:layout_toRightOf="@+id/title"
@@ -44,6 +50,8 @@
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="@string/type"
+        android:background="@drawable/button_shape"
+        style="@style/ButtonStyle"
         android:layout_alignBaseline="@+id/accuracy"
         android:layout_alignBottom="@+id/accuracy"
         android:layout_alignParentRight="true"
@@ -55,6 +63,9 @@
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="@string/accuracy"
+        android:background="@drawable/button_shape"
+        style="@style/ButtonStyle"
+        android:layout_marginTop="11dp"
         android:layout_below="@+id/rockUnit"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
@@ -66,6 +77,8 @@
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="@string/note"
+        android:background="@drawable/button_shape"
+        style="@style/ButtonStyle"
         android:layout_alignBaseline="@+id/rockUnit"
         android:layout_alignBottom="@+id/rockUnit"
         android:layout_alignParentRight="true"
@@ -76,23 +89,28 @@
     <Button
         android:id="@+id/save"
         android:layout_width="100dp"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/mr_dialog_fixed_width_major"
         android:text="@string/save"
         android:layout_below="@+id/accuracy"
         android:layout_alignLeft="@+id/bigClockface"
         android:layout_alignStart="@+id/bigClockface"
         android:layout_marginTop="13dp"
         android:layout_toLeftOf="@+id/littleClockface"
-        android:layout_toStartOf="@+id/littleClockface" />
+        android:layout_toStartOf="@+id/littleClockface"
+        android:background="@drawable/button_shape"
+        style="@style/ButtonStyle"/>
 
     <Button
         android:id="@+id/surveyor"
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="@string/surveyor"
+        android:background="@drawable/button_shape"
+        style="@style/ButtonStyle"
         android:layout_below="@+id/testo"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
+        android:layout_marginTop="11dp"
         android:layout_toLeftOf="@+id/title"
         android:layout_toStartOf="@+id/title" />
 
@@ -105,7 +123,8 @@
         android:src="@drawable/cfacetwo"
         android:layout_above="@+id/title"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="5dp" />
+        android:layout_marginBottom="5dp"
+        android:layout_alignParentTop="true" />
 
     <ImageButton
         android:id="@+id/littleClockface"
@@ -152,6 +171,15 @@
         android:text="  Value:"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
+
+    <ImageView
+        android:id="@+id/padLock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/bigClockface"
+        android:layout_alignTop="@+id/littleClockface"
+        android:layout_toLeftOf="@+id/save"
+        android:src="@drawable/padlock" />
 
 
 </RelativeLayout>
