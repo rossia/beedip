@@ -63,7 +63,7 @@
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="@string/accuracy"
-        android:background="@drawable/button_shape"
+        android:background="@drawable/accuracy_green"
         style="@style/ButtonStyle"
         android:layout_marginTop="11dp"
         android:layout_below="@+id/rockUnit"
