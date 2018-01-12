@@ -213,7 +213,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         save = (Button) getView().findViewById(R.id.save);
         //Setting initial background color of buttons
         //accuracy.setBackgroundColor(Color.GREEN);
-        accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+        //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+        //accuracy.setBackgroundResource(R.drawable.accuracy_green);
         pLock.setVisibility(View.GONE);
         save.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -479,16 +480,18 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             @Override
             public void onClick(View arg0) {
+                isAccurate = !isAccurate;
                 //Changing button color
                 if (!isAccurate) {
                     //accuracy.setBackgroundColor(Color.RED);
-                    accuracy.setBackgroundColor(Color.parseColor("#e11919"));
+                    //accuracy.setBackgroundColor(Color.parseColor("#e11919"));
+                    accuracy.setBackgroundResource(R.drawable.accuracy_red);
                 }
                 else{
                     //accuracy.setBackgroundColor(Color.GREEN);
-                    accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+                    //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+                    accuracy.setBackgroundResource(R.drawable.accuracy_green);
                 }
-                isAccurate = !isAccurate;
                 if (currentMeasure != null) {
                     currentMeasure.setAccurate(isAccurate);
                 }
@@ -918,7 +921,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //type.setText(currentType);
         currentRockunit = null;
         isAccurate = true;
-        accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+        //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
+        accuracy.setBackgroundResource(R.drawable.accuracy_green);
     }
 
     private void getLocation(){
