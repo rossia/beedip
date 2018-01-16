@@ -118,24 +118,24 @@
         android:id="@+id/bigClockface"
         android:layout_width="200dp"
         android:layout_height="200dp"
-        android:background="@null"
-        android:scaleType="fitCenter"
-        android:src="@drawable/cfacetwo"
         android:layout_above="@+id/title"
+        android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="5dp"
-        android:layout_alignParentTop="true" />
+        android:background="@null"
+        android:scaleType="centerCrop"
+        android:src="@drawable/cftwo" />
 
     <ImageButton
         android:id="@+id/littleClockface"
         android:layout_width="45dp"
         android:layout_height="45dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/cfacetwo"
-        android:background="@null"
         android:layout_alignBottom="@+id/bigClockface"
+        android:layout_toEndOf="@+id/bigClockface"
         android:layout_toRightOf="@+id/bigClockface"
-        android:layout_toEndOf="@+id/bigClockface" />
+        android:background="@null"
+        android:scaleType="centerCrop"
+        android:src="@drawable/cfaceone" />
 
     <ImageView
         android:id="@+id/littleIndicator"
@@ -144,10 +144,11 @@
         android:scaleType="fitCenter"
         android:src="@drawable/arrow"
         android:layout_alignBottom="@+id/littleClockface"
-        android:layout_toRightOf="@+id/bigClockface"
-        android:layout_alignTop="@+id/littleClockface"
         android:layout_alignRight="@+id/littleClockface"
-        android:layout_alignEnd="@+id/littleClockface" />
+        android:layout_alignEnd="@+id/littleClockface"
+        android:layout_alignTop="@+id/littleClockface"
+        android:layout_toRightOf="@+id/bigClockface"
+        android:layout_toEndOf="@+id/bigClockface" />
 
     <ImageView
         android:id="@+id/bigIndicator"
