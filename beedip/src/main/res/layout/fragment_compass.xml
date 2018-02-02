@@ -2,140 +2,179 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#000000">
+
+
+    <Button
+        android:id="@+id/save"
+        style="@style/ButtonStyle"
+        android:background="@drawable/button_shape"
+        android:text="@string/save"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/accuracy"
+        android:layout_alignParentBottom="true" />
+
+    <Button
+        android:id="@+id/accuracy"
+        style="@style/ButtonStyle"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_shape"
+        android:textColor="#32ae16"
+        android:text="@string/accuracy"
+        android:layout_below="@+id/rockUnit"
+        android:layout_alignRight="@+id/space"
+        android:layout_alignEnd="@+id/space"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:id="@+id/type"
+        style="@style/ButtonStyle"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_shape"
+        android:text="@string/type"
+        android:layout_alignBaseline="@+id/accuracy"
+        android:layout_alignBottom="@+id/accuracy"
+        android:layout_toRightOf="@+id/accuracy"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <Space
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/accuracy"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="15dp"
+        android:id="@+id/space" />
+
+    <Button
+        android:id="@+id/rockUnit"
+        style="@style/ButtonStyle"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_shape"
+        android:text="@string/rock_unit"
+        android:layout_below="@+id/surveyor"
+        android:layout_alignRight="@+id/space"
+        android:layout_alignEnd="@+id/space"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:id="@+id/note"
+        style="@style/ButtonStyle"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_shape"
+        android:text="@string/note"
+        android:layout_alignBaseline="@+id/rockUnit"
+        android:layout_alignBottom="@+id/rockUnit"
+        android:layout_toRightOf="@+id/rockUnit"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:id="@+id/surveyor"
+        style="@style/ButtonStyle"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_shape"
+        android:text="@string/surveyor"
+        android:layout_below="@+id/testo"
+        android:layout_alignRight="@+id/space"
+        android:layout_alignEnd="@+id/space"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:id="@+id/locality"
+        style="@style/ButtonStyle"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_shape"
+        android:text="@string/locality"
+        android:layout_alignBaseline="@+id/surveyor"
+        android:layout_alignBottom="@+id/surveyor"
+        android:layout_alignLeft="@+id/space"
+        android:layout_alignStart="@+id/space"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:id="@+id/coordinates"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/ButtonStyle"
+        android:background="@drawable/button_shape"
+        android:text="@string/latitude_longitude"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 
     <TextView
         android:id="@+id/testo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Valori misurati"
-        app:layout_constraintRight_toRightOf="parent"
+        android:textAppearance="@style/TextAppearance.AppCompat.Display1"
         app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_below="@+id/title"
-        android:layout_centerHorizontal="true"
-        android:typeface="serif"
-        android:textStyle="bold" />
-
-
-    <Button
-        android:id="@+id/rockUnit"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="@string/rock_unit"
-        android:background="@drawable/button_shape"
-        style="@style/ButtonStyle"
-        android:layout_marginTop="12dp"
-        android:layout_below="@+id/surveyor"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/surveyor"
-        android:layout_alignEnd="@+id/surveyor" />
-
-    <Button
-        android:id="@+id/locality"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="@string/locality"
-        android:background="@drawable/button_shape"
-        style="@style/ButtonStyle"
-        android:layout_alignBaseline="@+id/surveyor"
-        android:layout_alignBottom="@+id/surveyor"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_toRightOf="@+id/title"
-        android:layout_toEndOf="@+id/title" />
-    <Button
-        android:id="@+id/type"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="@string/type"
-        android:background="@drawable/button_shape"
-        style="@style/ButtonStyle"
-        android:layout_alignBaseline="@+id/accuracy"
-        android:layout_alignBottom="@+id/accuracy"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignLeft="@+id/note"
-        android:layout_alignStart="@+id/note" />
-    <Button
-        android:id="@+id/accuracy"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="@string/accuracy"
-        android:background="@drawable/accuracy_green"
-        style="@style/ButtonStyle"
-        android:layout_marginTop="11dp"
-        android:layout_below="@+id/rockUnit"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/rockUnit"
-        android:layout_alignEnd="@+id/rockUnit" />
-
-    <Button
-        android:id="@+id/note"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="@string/note"
-        android:background="@drawable/button_shape"
-        style="@style/ButtonStyle"
-        android:layout_alignBaseline="@+id/rockUnit"
-        android:layout_alignBottom="@+id/rockUnit"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignLeft="@+id/locality"
-        android:layout_alignStart="@+id/locality" />
-
-    <Button
-        android:id="@+id/save"
-        android:layout_width="100dp"
-        android:layout_height="@dimen/mr_dialog_fixed_width_major"
-        android:text="@string/save"
-        android:layout_below="@+id/accuracy"
-        android:layout_alignLeft="@+id/bigClockface"
-        android:layout_alignStart="@+id/bigClockface"
-        android:layout_marginTop="13dp"
-        android:layout_toLeftOf="@+id/littleClockface"
-        android:layout_toStartOf="@+id/littleClockface"
-        android:background="@drawable/button_shape"
-        style="@style/ButtonStyle"/>
-
-    <Button
-        android:id="@+id/surveyor"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="@string/surveyor"
-        android:background="@drawable/button_shape"
-        style="@style/ButtonStyle"
-        android:layout_below="@+id/testo"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="11dp"
-        android:layout_toLeftOf="@+id/title"
-        android:layout_toStartOf="@+id/title" />
+        android:typeface="sans"
+        android:textColor="#ffdb00"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
 
     <ImageButton
         android:id="@+id/bigClockface"
-        android:layout_width="200dp"
+        android:layout_width="wrap_content"
         android:layout_height="200dp"
-        android:layout_above="@+id/title"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="5dp"
         android:background="@null"
-        android:scaleType="centerCrop"
-        android:src="@drawable/cftwo" />
+        android:scaleType="fitCenter"
+        android:src="@drawable/cftwo"
+        android:layout_below="@+id/coordinates"
+        android:layout_above="@+id/testo"
+        android:layout_alignLeft="@+id/surveyor"
+        android:layout_alignStart="@+id/surveyor"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
     <ImageButton
         android:id="@+id/littleClockface"
         android:layout_width="45dp"
         android:layout_height="45dp"
-        android:layout_alignBottom="@+id/bigClockface"
-        android:layout_toEndOf="@+id/bigClockface"
-        android:layout_toRightOf="@+id/bigClockface"
         android:background="@null"
         android:scaleType="centerCrop"
-        android:src="@drawable/cfaceone" />
+        android:src="@drawable/cfaceone"
+        android:layout_above="@+id/locality"
+        android:layout_alignRight="@+id/locality"
+        android:layout_alignEnd="@+id/locality"
+        android:layout_marginBottom="11dp" />
+
+    <ImageView
+        android:id="@+id/padLock"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:src="@drawable/padlock"
+        android:layout_alignTop="@+id/littleClockface"
+        android:layout_alignLeft="@+id/bigClockface"
+        android:layout_alignStart="@+id/bigClockface"
+        android:layout_marginLeft="12dp"
+        android:layout_marginStart="12dp" />
+
+    <ImageView
+        android:id="@+id/bigIndicator"
+        android:layout_width="90dp"
+        android:layout_height="90dp"
+        android:layout_above="@+id/padLock"
+        android:layout_alignBottom="@+id/bigClockface"
+        android:layout_alignTop="@+id/bigClockface"
+        android:layout_marginBottom="45dp"
+        android:layout_marginTop="45dp"
+        android:layout_marginLeft="125dp"
+        android:layout_marginRight="125dp"
+        android:scaleType="fitCenter"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/mid" />
 
     <ImageView
         android:id="@+id/littleIndicator"
@@ -144,44 +183,13 @@
         android:scaleType="fitCenter"
         android:src="@drawable/arrow"
         android:layout_alignBottom="@+id/littleClockface"
-        android:layout_alignRight="@+id/littleClockface"
-        android:layout_alignEnd="@+id/littleClockface"
+        android:layout_alignLeft="@+id/littleClockface"
+        android:layout_alignStart="@+id/littleClockface"
         android:layout_alignTop="@+id/littleClockface"
-        android:layout_toRightOf="@+id/bigClockface"
-        android:layout_toEndOf="@+id/bigClockface" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
-    <ImageView
-        android:id="@+id/bigIndicator"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:src="@drawable/mid"
-        android:scaleType="fitCenter"
-        android:layout_marginTop="50dp"
-        android:layout_alignTop="@+id/bigClockface"
-        android:layout_marginBottom="50dp"
-        android:layout_alignBottom="@+id/bigClockface"
-        android:layout_centerHorizontal="true" />
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:text="  Value:"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
-
-    <ImageView
-        android:id="@+id/padLock"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/bigClockface"
-        android:layout_alignTop="@+id/littleClockface"
-        android:src="@drawable/padlock"
-        android:layout_toLeftOf="@+id/bigClockface"
-        android:layout_toStartOf="@+id/bigClockface" />
 
 
 </RelativeLayout>
