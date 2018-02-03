@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="App_EditTextStyle" parent="@android:style/Theme.Dialog">
+        <item name="android:colorControlNormal">#f2de00</item>
+        <item name="android:colorControlActivated">#c5c5c5</item>
+        <item name="android:colorControlHighlight">#F222AA</item>
+    </style>
+</resources>

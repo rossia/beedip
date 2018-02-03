@@ -20,6 +20,10 @@ import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.text.InputType;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -122,6 +126,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     Button note;
     Button save;
     Button operator;
+    Button coordinates;
     //private double lat;
     //private double lon;
     LatLng lastPositionAvaiable;
@@ -212,11 +217,16 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         accuracy = (Button) getView().findViewById(R.id.accuracy);
         note = (Button) getView().findViewById(R.id.note);
         save = (Button) getView().findViewById(R.id.save);
+        coordinates = (Button) getView().findViewById(R.id.coordinates);
         //Setting initial background color of buttons
         //accuracy.setBackgroundColor(Color.GREEN);
         //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
         //accuracy.setBackgroundResource(R.drawable.accuracy_green);
+        this.getLocation();
+        coordinates.setText(lastPositionAvaiable.latitude+" / "+lastPositionAvaiable.longitude);
         pLock.setVisibility(View.GONE);
+        save.setBackgroundResource(R.drawable.save_shape_red);
+        save.setTextColor(Color.parseColor("#e11919"));
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -240,7 +250,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     if (currentNotes != null)
                         currentMeasure.setNote(currentNotes);
                     saveMeasurement(new LatLng(lastPositionAvaiable.latitude, lastPositionAvaiable.longitude), currentMeasure);
-
+                    save.setBackgroundResource(R.drawable.save_shape_green);
+                    save.setTextColor(Color.parseColor("#32ae16"));
                     resetParameters();
                 }
                 else{
@@ -253,6 +264,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         type.setEnabled(false);
         save.setEnabled(false);
         save.setText("");
+
+        coordinates.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getLocation();
+            }
+        });
 
 
 
@@ -289,9 +307,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                if (currentMeasure == null) {
                    currentMeasure = new CompassMeasurement(currentInlcination, currentDipdirection, selectedYounging, isAccurate);
                    pLock.setVisibility(View.VISIBLE);
+                   save.setBackgroundResource(R.drawable.save_shape_blue);
+                   save.setTextColor(Color.parseColor("#00d2ff"));
                } else {
                    currentMeasure = null;
                    pLock.setVisibility(View.GONE);
+                   save.setBackgroundResource(R.drawable.save_shape_red);
+                   save.setTextColor(Color.parseColor("#e11919"));
                }
                 if (!isUpright) {
                     selectedYounging = CompassMeasurement.Younging.OVERTURNED;
@@ -316,12 +338,52 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             @Override
             public void onClick(View arg0) {
-                AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
-                alertDialog.setTitle("Rock Unit");
-                alertDialog.setMessage("Write a rock unit");
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+                //alertDialog.setTitle("Rock Unit");
+                //alertDialog.setMessage("Write a rock unit");
+
+                View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_r, null);
 
 
-                final EditText input = new EditText(getActivity());
+                //CHANGING ALERT DIALOG TITLE'S COLOR
+                // Specify the alert dialog title
+                String titleText = "Rock Unit";
+                // Initialize a new foreground color span instance
+                ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+                // Apply the text color span
+                ssBuilder.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        titleText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                // Set the alert dialog title using spannable string builder
+                alertDialog.setTitle(ssBuilder);
+
+                //CHANGING ALERT DIALOG MESSAGE'S COLOR
+                // Specify the alert dialog message
+                String messageText = "Write a rock unit.";
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+                // Apply the text color span
+                ssBuildermessage.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        messageText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                // Set the alert dialog message using spannable string builder
+                alertDialog.setMessage(ssBuildermessage);
+
+
+
+                /*final EditText input = new EditText(getActivity());
+                //final EditText input = (EditText) getActivity().findViewById(R.id.prova);
+                //final TextView input = (TextView) customStyle.findViewById(R.id.prova);
+                input.setTextColor(Color.parseColor("#f2de00"));
+                //input.setHighlightColor(Color.parseColor("#f2de00"));
                 if (currentRockunit != null) {
                     input.setText(currentRockunit);
                     input.setSelectAllOnFocus(true);
@@ -330,17 +392,28 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
                 input.setLayoutParams(lp);
-                alertDialog.setView(input);
+                alertDialog.setView(input);*/
 
+                final TextView input = (TextView) customStyle.findViewById(R.id.etext_r);
+                if (currentRockunit != null) {
+                    input.setText(currentRockunit);
+                    input.setSelectAllOnFocus(true);
+                }
+
+                input.setHighlightColor(Color.parseColor("#4d4d4d"));
 
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 tmp = input.getText().toString();
-                                if (!tmp.equals(""))
+                                if (!tmp.equals("")) {
                                     currentRockunit = tmp;
-                                else
+                                    rockUnit.setTextColor(Color.parseColor("#00d2ff"));
+                                }
+                                else {
                                     currentRockunit = null;
+                                    rockUnit.setTextColor(Color.parseColor("#f2de00"));
+                                }
 
                             }
                         });
@@ -352,8 +425,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                             }
                         });
                 //alertDialog.show();
+
+
+
                 AlertDialog dialog = alertDialog.create();
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.setView(customStyle);
                 dialog.show();
             }
 
@@ -364,12 +441,47 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             @Override
             public void onClick(View arg0) {
-                AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
-                alertDialog.setTitle("Surveyor");
-                alertDialog.setMessage("Write the Surveyor's name");
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+                //alertDialog.setTitle("Surveyor");
+                //alertDialog.setMessage("Write the Surveyor's name");
+
+                View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
+
+                //CHAGING ALERT DIALOG TITLE'S COLOR
+                // Specify the alert dialog title
+                String titleText = "Surveyor";
+                // Initialize a new foreground color span instance
+                ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+                // Apply the text color span
+                ssBuilder.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        titleText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                // Set the alert dialog title using spannable string builder
+                alertDialog.setTitle(ssBuilder);
+
+                //CHANGING ALERT DIALOG MESSAGE'S COLOR
+                // Specify the alert dialog message
+                String messageText = "Write the surveyor's name.";
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+                // Apply the text color span
+                ssBuildermessage.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        messageText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                // Set the alert dialog message using spannable string builder
+                alertDialog.setMessage(ssBuildermessage);
 
 
-                final EditText input = new EditText(getActivity());
+                /*final EditText input = new EditText(getActivity());
+                input.setTextColor(Color.parseColor("#f2de00"));
                 if (currentSurveyor != null) {
                     input.setText(currentSurveyor);
                     input.setSelectAllOnFocus(true);
@@ -378,16 +490,28 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
                 input.setLayoutParams(lp);
-                alertDialog.setView(input);
+                alertDialog.setView(input);*/
+
+                final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
+                if (currentSurveyor != null) {
+                    input.setText(currentSurveyor);
+                    input.setSelectAllOnFocus(true);
+                }
+
+                input.setHighlightColor(Color.parseColor("#4d4d4d"));
 
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 tmp = input.getText().toString();
-                                if (!tmp.equals(""))
+                                if (!tmp.equals("")) {
                                     currentSurveyor = tmp;
-                                else
+                                    operator.setTextColor(Color.parseColor("#00d2ff"));
+                                }
+                                else {
                                     currentSurveyor = null;
+                                    operator.setTextColor(Color.parseColor("#f2de00"));
+                                }
 
                             }
                         });
@@ -399,8 +523,17 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                             }
                         });
                 //alertDialog.show();
+
+
+
+
+
+
+
+
                 AlertDialog dialog = alertDialog.create();
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.setView(customStyle);
                 dialog.show();
             }
 
@@ -411,11 +544,46 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             @Override
             public void onClick(View arg0) {
-                AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
-                alertDialog.setTitle("Location");
-                alertDialog.setMessage("Write the Location.");
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+                //alertDialog.setTitle("Location");
+                //alertDialog.setMessage("Write the Location.");
 
-                final EditText input = new EditText(getActivity());
+                View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_l, null);
+
+                //CHANGING ALERT DIALOG TITLE'S COLOR
+                // Specify the alert dialog title
+                String titleText = "Location";
+                // Initialize a new foreground color span instance
+                ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+                // Apply the text color span
+                ssBuilder.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        titleText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                // Set the alert dialog title using spannable string builder
+                alertDialog.setTitle(ssBuilder);
+
+                //CHANGING ALERT DIALOG MESSAGE'S COLOR
+                // Specify the alert dialog message
+                String messageText = "Write the Location.";
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+                // Apply the text color span
+                ssBuildermessage.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        messageText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                // Set the alert dialog message using spannable string builder
+                alertDialog.setMessage(ssBuildermessage);
+
+                /*final EditText input = new EditText(getActivity());
+                input.setTextColor(Color.parseColor("#f2de00"));
                 if (currentLocation != null) {
                     input.setText(currentLocation);
                     input.setSelectAllOnFocus(true);
@@ -424,17 +592,30 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.MATCH_PARENT);
                 input.setLayoutParams(lp);
-                alertDialog.setView(input);
+                alertDialog.setView(input);*/
                 //Do you want to set an icon?
                 //alertDialog.setIcon(R.drawable.ICON_ID);
+
+                final TextView input = (TextView) customStyle.findViewById(R.id.etext_l);
+                if (currentLocation != null) {
+                    input.setText(currentLocation);
+                    input.setSelectAllOnFocus(true);
+                }
+
+                input.setHighlightColor(Color.parseColor("#4d4d4d"));
+
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 tmp = input.getText().toString();
-                                if (!tmp.equals(""))
+                                if (!tmp.equals("")) {
                                     currentLocation = tmp;
-                                else
+                                    locality.setTextColor(Color.parseColor("#00d2ff"));
+                                }
+                                else {
                                     currentLocation = null;
+                                    locality.setTextColor(Color.parseColor("#f2de00"));
+                                }
                             }
                         });
 
@@ -447,6 +628,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 //alertDialog.show();
                 AlertDialog dialog = alertDialog.create();
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                dialog.setView(customStyle);
                 dialog.show();
             }
 
@@ -459,8 +641,27 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onClick(View arg0) {
                 //Printing popup menu
-                AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity());
-                dialog.setTitle("Pick a type");
+                AlertDialog.Builder dialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+                //dialog.setTitle("Pick a type");
+
+                //CHANGING ALERT DIALOG TITLE'S COLOR
+                // Specify the alert dialog title
+                String titleText = "Pick a type";
+                // Initialize a new foreground color span instance
+                ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+                // Apply the text color span
+                ssBuilder.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        titleText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+                // Set the alert dialog title using spannable string builder
+                dialog.setTitle(ssBuilder);
+
+
                 final ArrayAdapter<String> featuresAdapter = new ArrayAdapter<String>(
                         getActivity(), android.R.layout.simple_spinner_item, features);
                 dialog.setAdapter(featuresAdapter, new DialogInterface.OnClickListener() {
@@ -486,12 +687,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 if (!isAccurate) {
                     //accuracy.setBackgroundColor(Color.RED);
                     //accuracy.setBackgroundColor(Color.parseColor("#e11919"));
-                    accuracy.setBackgroundResource(R.drawable.accuracy_red);
+                    //accuracy.setBackgroundResource(R.drawable.accuracy_red);
+                    accuracy.setTextColor(Color.parseColor("#e11919"));
                 }
                 else{
                     //accuracy.setBackgroundColor(Color.GREEN);
                     //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-                    accuracy.setBackgroundResource(R.drawable.accuracy_green);
+                    //accuracy.setBackgroundResource(R.drawable.accuracy_green);
+                    accuracy.setTextColor(Color.parseColor("#32ae16"));
                 }
                 if (currentMeasure != null) {
                     currentMeasure.setAccurate(isAccurate);
@@ -506,29 +709,58 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             @Override
             public void onClick(View arg0) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle("Notes");
+                AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+                //builder.setTitle("Notes");
 
-                final EditText input = new EditText(getActivity());
+                View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_n, null);
+
+                // Specify the alert dialog title
+                String titleText = "Notes";
+
+                // Initialize a new foreground color span instance
+                ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+
+                // Initialize a new spannable string builder instance
+                SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+
+                // Apply the text color span
+                ssBuilder.setSpan(
+                        foregroundColorSpan,
+                        0,
+                        titleText.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+
+                // Set the alert dialog title using spannable string builder
+                builder.setTitle(ssBuilder);
+
+                //final EditText input = new EditText(getActivity());
+                final TextView input = (TextView) customStyle.findViewById(R.id.etext_n);
+                input.setTextColor(Color.parseColor("#f2de00"));
                 input.setText("Leave a note.");
                 input.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
                 input.setSingleLine(false);
                 input.setLines(5);
                 input.setMaxLines(5);
                 input.setGravity(Gravity.LEFT | Gravity.TOP);
-                builder.setView(input);
+                //builder.setView(input);
                 if (currentNotes != null) {
                     input.setText(currentNotes);
                 }
                 input.setSelectAllOnFocus(true);
+                input.setHighlightColor(Color.parseColor("#4d4d4d"));
 
                 builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         tmp = input.getText().toString();
-                        if (!tmp.equals(""))
+                        if (!tmp.equals("")) {
                             currentNotes = tmp;
-                        else
+                            note.setTextColor(Color.parseColor("#00d2ff"));
+                        }
+                        else {
                             currentNotes = null;
+                            note.setTextColor(Color.parseColor("#f2de00"));
+                        }
                     }
                 });
 
@@ -541,6 +773,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         });
                 AlertDialog alert = builder.create();
                 alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                alert.setView(customStyle);
                 alert.show();
             }
 
@@ -918,12 +1151,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     private void resetParameters() {
         currentNotes = null;
+        note.setTextColor(Color.parseColor("#f2de00"));
         //currentType = (String) choices[0];
         //type.setText(currentType);
         currentRockunit = null;
+        rockUnit.setTextColor(Color.parseColor("#f2de00"));
         isAccurate = true;
         //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-        accuracy.setBackgroundResource(R.drawable.accuracy_green);
+        //accuracy.setBackgroundResource(R.drawable.accuracy_green);
+        accuracy.setTextColor(Color.parseColor("#32ae16"));
     }
 
     private void getLocation(){
@@ -949,6 +1185,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onLocationChanged(Location location) {
                 lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
+                coordinates.setText(location.getLatitude()+" / "+location.getLongitude());
             }
 
             @Override
@@ -971,6 +1208,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onLocationChanged(Location location) {
                 lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
+                coordinates.setText(location.getLatitude()+" / "+location.getLongitude());
             }
 
             @Override
