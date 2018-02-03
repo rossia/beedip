@@ -168,6 +168,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         currentSurveyor = null;
         selectedYounging = CompassMeasurement.Younging.UPRIGHT;
         lastPositionAvaiable = new LatLng(43.700180, 12.640637);
+        getLocation();
 
 
         //Hiding useless buttons if class launched with compass on the bigger clock face
