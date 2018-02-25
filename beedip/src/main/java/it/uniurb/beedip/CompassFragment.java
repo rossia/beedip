@@ -43,6 +43,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import it.uniurb.beedip.data.CompassMeasurement;
@@ -50,6 +51,7 @@ import it.uniurb.beedip.data.GeoPackageDatabases;
 import it.uniurb.beedip.data.OnMeasurementSentListener;
 import android.graphics.Color;
 
+import java.util.LinkedList;
 import java.util.List;
 import mil.nga.geopackage.GeoPackage;
 import mil.nga.geopackage.GeoPackageManager;
@@ -155,24 +157,20 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         super.onCreate(savedInstanceState);
 
         //Variables initialization
-        //clickCounter = 1;
-        //lat = 0.0;
-        //lon = 0.0;
         currentCompass = 0;
         currentDipdirection = 0;
-        //inclinometro = new Inclinometer();
-        //choices = new CharSequence[]{"Bedding", "Cleavage", "Fault"};
-        //currentType = (String) choices[0];
+        currentType = null;
         isAccurate = true;
         msrLock = false;
-        isUpright = false;
+        isUpright = true;
         cfState = true;
         currentLocation = null;
         currentNotes = null;
         currentRockunit = null;
         currentSurveyor = null;
         selectedYounging = CompassMeasurement.Younging.UPRIGHT;
-        lastPositionAvaiable = new LatLng(43.700180, 12.640637);
+        lastPositionAvaiable = new LatLng(43.70018, 12.64063);
+        features = new LinkedList<>();
         getLocation();
 
 
@@ -199,29 +197,23 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         lIndicator = (ImageView) getView().findViewById(R.id.littleIndicator);
         bIndicator = (ImageView) getView().findViewById(R.id.bigIndicator);
         pLock = (ImageView) getView().findViewById(R.id.padLock);
-        //back = (ImageView) getView().findViewById(R.id.quadrante);
         displayValues = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
         //SensorManager's initialization (It allow to declare sensor variables)
         sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-        //Initialization of useful sensors
         sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION);
         sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+
         //Buttons init
         bigClockFace = (ImageButton) getView().findViewById(R.id.bigClockface);
         littleClockFace = (ImageButton) getView().findViewById(R.id.littleClockface);
         rockUnit = (Button) getView().findViewById(R.id.rockUnit);
         locality = (Button) getView().findViewById(R.id.locality);
-        //type = (Spinner) getView().findViewById(R.id.fragment_compass_layer_spinner);
         type = (Button) getView().findViewById(R.id.type);
         operator = (Button) getView().findViewById(R.id.surveyor);
         accuracy = (Button) getView().findViewById(R.id.accuracy);
         note = (Button) getView().findViewById(R.id.note);
         save = (Button) getView().findViewById(R.id.save);
         coordinates = (Button) getView().findViewById(R.id.coordinates);
-        //Setting initial background color of buttons
-        //accuracy.setBackgroundColor(Color.GREEN);
-        //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-        //accuracy.setBackgroundResource(R.drawable.accuracy_green);
         this.getLocation();
         coordinates.setText(lastPositionAvaiable.latitude+" / "+lastPositionAvaiable.longitude);
         pLock.setVisibility(View.GONE);
@@ -253,6 +245,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     save.setBackgroundResource(R.drawable.save_shape_green);
                     save.setTextColor(Color.parseColor("#32ae16"));
                     resetParameters();
+
+                    save.setEnabled(false);
                 }
                 else{
                     featureTableToast = Toast.makeText(getActivity(),
@@ -307,13 +301,20 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                if (currentMeasure == null) {
                    currentMeasure = new CompassMeasurement(currentInlcination, currentDipdirection, selectedYounging, isAccurate);
                    pLock.setVisibility(View.VISIBLE);
-                   save.setBackgroundResource(R.drawable.save_shape_blue);
-                   save.setTextColor(Color.parseColor("#00d2ff"));
+                   //Changes color to save button only if a project is selected
+                   if(!features.isEmpty()) {
+                       save.setBackgroundResource(R.drawable.save_shape_blue);
+                       save.setTextColor(Color.parseColor("#00d2ff"));
+                   }
                } else {
                    currentMeasure = null;
                    pLock.setVisibility(View.GONE);
                    save.setBackgroundResource(R.drawable.save_shape_red);
                    save.setTextColor(Color.parseColor("#e11919"));
+                   //If list is not empty, so a project is selected
+                   //Enables save
+                   if(!features.isEmpty())
+                       save.setEnabled(true);
                }
                 if (!isUpright) {
                     selectedYounging = CompassMeasurement.Younging.OVERTURNED;
@@ -800,243 +801,42 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         //TO END TO DEFINE
-        int degree;
         if (currentMeasure == null) {
-            //COMPASS
-            //Compass animation
-            //Acquiring values
-            degree = Math.round(sensorEvent.values[0]);
-            RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_comp.setDuration(4000);
-            ra_comp.setFillAfter(true);
-            ra_comp.setRepeatCount(Animation.INFINITE);
-            currentCompass = degree;
-
-            if (cfState) {
-                lIndicator.setAnimation(ra_comp);
-                lIndicator.startAnimation(ra_comp);
-            } else {
-                bIndicator.setAnimation(ra_comp);
-                bIndicator.startAnimation(ra_comp);
-                //Compass text-printed values
-                displayValues.setText(degree + "°");
-            }
-
-            //CLINOMETER
-            //Clinometer animation
-            //Acquiring values
-            boolean upsideDown = false;
-            boolean avoidAnimation = false;
-            //int usOffset;
-            int x = Math.round(sensorEvent.values[0]);
-            int y = Math.round(sensorEvent.values[1]);
-            int z = Math.round(sensorEvent.values[2]);
-            //Offsetting y axis
-            if (y == 0) {
-                //nothing
-            } else if ((y > 90) && (y < 179)) {
-                y = 90 - (y - 90);
-            } else if ((y == 180) || (y == -180)) {
-                y = 0;
-            } else if ((y < -90) && (y > -179)) {
-                y = -(90 + (y + 90));
-            }
-            //double y1 = sensorEvent.values[1];
-            double y1 = (double) y;
-            double z1 = sensorEvent.values[2];
-            double posy,
-                    posz,
-                    ypar,
-                    zpar,
-                    res,
-                    dipDouble;
-            int dipAngle,
-                    distance,
-                    toDisplay;
-
-            posy = Math.abs(y1);
-            posz = Math.abs(z1);
-            //Converting posy and posz from degrees to radians
-            posy = posy * Math.PI / 180;
-            posz = posz * Math.PI / 180;
-            ypar = Math.sin(posy);
-            zpar = Math.sin(posz);
-            //Finding the resultant vector
-            res = Math.sqrt(Math.pow(ypar, 2.0) + Math.pow(zpar, 2.0));
-            //Angle in degrees
-            dipDouble = (Math.asin(ypar / res) * 180 / Math.PI);
-            dipAngle = (int) dipDouble;
-            //Getting the offset to have the real angle
-            if ((y > 0) && (z > 0)) {
-                //I
-                dipAngle = 90 - dipAngle;
-            } else if ((y > 0) && (z < 0)) {
-                //IV
-                dipAngle = dipAngle + 270;
-            } else if ((y < 0) && (z > 0)) {
-                //II
-                dipAngle = dipAngle + 90;
-            } else if ((y < 0) && (z < 0)) {
-                //III
-                dipAngle = 90 - dipAngle + 180;
-            }else if ((y == 0) && (z > 0)) {
-                dipAngle = 90;
-            } else if ((y == 0) && (z < 0)) {
-                dipAngle = 270;
-            } else if ((y > 0) && (z == 0)) {
-                dipAngle = 0;
-            } else if ((y < 0) && (z == 0)) {
-                dipAngle = 180;
-            } else if ((y == 0) && (z == 0)) {
-                dipAngle = 0;
-            }
-
-            //Finding out if phone is upside down and telling related values
-            if((Math.abs(Math.round(sensorEvent.values[1])) > 90)){
-                upsideDown = true;
-                dipAngle = dipAngle + 180;
-                if(dipAngle >= 360)
-                    dipAngle = dipAngle - 360;
-
-            }
-
-            distance = dipAngle - x;
-            //dipAngle = direction of the phone's inclination
-            //Distance dipDirection
-            if (distance <= 0)
-                distance = 360 - x + dipAngle;
-            distance = Math.abs(360 - distance);
-
-
-            //Calculating inclination to display
-            toDisplay = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(y1)), 2.0) +Math.pow(Math.sin(Math.toRadians(z1)), 2.0)))));
-            if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
-                toDisplay = 90;
-
-            //Offsetting dipAngle for animation
-            dipAngle = dipAngle + 180;
-            if(dipAngle >= 360)
-                dipAngle = dipAngle - 360;
-            if((dipAngle > 0) && (dipAngle <= 180)) {
-                //dipAngle = dipAngle + 180;
-                dipAngle = 180 - dipAngle;
-                dipAngle = 180 + dipAngle;
-            }
-            else if((dipAngle > 180) && (dipAngle < 360)) {
-                //dipAngle = dipAngle - 180;
-                dipAngle = dipAngle - 180;
-                dipAngle = 180 - dipAngle;
-            }
-
-            if(upsideDown) {
-                dipAngle = dipAngle + 180;
-                if(dipAngle >= 360)
-                    dipAngle = dipAngle - 360;
-            }
-
-            /*This fixes the blink in the animation from 359 to 1 and from 1 to 359
-            if((prevDipangle > 350) && (dipAngle < 10))
-                prevDipangle = 1;
-            else if((prevDipangle < 10) && (dipAngle > 350))
-                prevDipangle = 359;*/
-
-
-            RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
-                    0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_clino.setDuration(4000);
-            ra_clino.setFillAfter(true);
-            ra_clino.setRepeatCount(Animation.INFINITE);
-            /*if(upsideDown){
-                dipAngle = dipAngle - 180;
-                if(dipAngle < 0)
-                    dipAngle = 360 + dipAngle;
-            }*/
-            prevDipangle = dipAngle;
-            currentDipdirection = distance;
-            currentInlcination = toDisplay;
-            //displayValues.setText(currentInlcination + "/" + currentDipdirection);
-
-            if(cfState) {
-                if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    bIndicator.setImageResource(R.drawable.sho);
+            if(!features.isEmpty()) {
+                //Do something while feature list is not empty
+                for(int i = 0; i < features.size(); i++){
+                    if(features.get(i).equals(currentType)){
+                        //Choosing the right behavior
+                        switch (i){
+                            case 0:
+                                this.compassCalculation(sensorEvent);
+                                this.inclinometerCalculation(sensorEvent);
+                                break;
+                            case 1:
+                                this.compassCalculation(sensorEvent);
+                                this.cleavageCalculation(sensorEvent);
+                                break;
+                            case 2:
+                                this.compassCalculation(sensorEvent);
+                                this.jointCalculation(sensorEvent);
+                                break;
+                            case 3:
+                                this.compassCalculation(sensorEvent);
+                                this.faultCalculation(sensorEvent);
+                                break;
+                            case 4:
+                                this.compassCalculation(sensorEvent);
+                                this.lineationCalculation(sensorEvent);
+                                break;
+                        }
+                    }
                 }
-                else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    bIndicator.setImageResource(R.drawable.mid);
-                }
-                else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
-                        (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
-                    bIndicator.setImageResource(R.drawable.nlong);
-                }
-                else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    bIndicator.setImageResource(R.drawable.rlong);
-                }
-                else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    bIndicator.setImageResource(R.drawable.rmid);
-                }
-                else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
-                    bIndicator.setImageResource(R.drawable.rsho);
-                }
-                else if((currentInlcination <= 3) && (currentInlcination >= 0)){
-                    bIndicator.setImageResource(R.drawable.cross);
-                    bIndicator.clearAnimation();
-                    currentDipdirection = 0;
-                    avoidAnimation = true;
-                }
-                else if(currentInlcination == 90){
-                    bIndicator.setImageResource(R.drawable.point);
-                }
-                bIndicator.getLayoutParams().width = 150;
-                bIndicator.getLayoutParams().height = 150;
-                bIndicator.requestLayout();
-
-                if(avoidAnimation != true) {
-                    bIndicator.setAnimation(ra_clino);
-                    bIndicator.startAnimation(ra_clino);
-                }
-
-                //Clino text-printed values
-                displayValues.setText(currentInlcination + "/" + currentDipdirection); //CAMBIARE ASSOLUTAMENTE
-                //sendMeasurementData(compassMesurement);
             }
             else{
-                if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    lIndicator.setImageResource(R.drawable.sho);
-                }
-                else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    lIndicator.setImageResource(R.drawable.mid);
-                }
-                else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
-                    lIndicator.setImageResource(R.drawable.nlong);
-                }
-                else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    lIndicator.setImageResource(R.drawable.rlong);
-                }
-                else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    lIndicator.setImageResource(R.drawable.rmid);
-                }
-                else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
-                    lIndicator.setImageResource(R.drawable.rsho);
-                }
-                else if((currentInlcination <= 3) && (currentInlcination >= 0)){
-                    lIndicator.setImageResource(R.drawable.cross);
-                    lIndicator.clearAnimation();
-                    avoidAnimation = true;
-                }
-                else if(currentInlcination == 90){
-                    lIndicator.setImageResource(R.drawable.point);
-
-                }
-                lIndicator.getLayoutParams().width = 35;
-                lIndicator.getLayoutParams().height = 35;
-                lIndicator.requestLayout();
-
-                if(avoidAnimation != true) {
-                    lIndicator.setAnimation(ra_clino);
-                    lIndicator.startAnimation(ra_clino);
-                }
-                //Clino text-printed values
-                //displayValues.setText( y + "/" + dipAngle);
-                //sendMeasurementData(compassMesurement);
+                //Do something when feature list is empty
+                //Bedding as default? (Dunno!)
+                this.compassCalculation(sensorEvent);
+                this.inclinometerCalculation(sensorEvent);
             }
         }
     }
@@ -1185,7 +985,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onLocationChanged(Location location) {
                 lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
-                coordinates.setText(location.getLatitude()+" / "+location.getLongitude());
+                String tmpLon = String.format("%.5f", location.getLatitude());
+                String tmpLat = String.format("%.5f", location.getLongitude());
+                coordinates.setText(tmpLat+" / "+tmpLon);
             }
 
             @Override
@@ -1300,6 +1102,264 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             featureTableToast.show();
         }
         /*-------------------------------------------------------------------------------------------------------------*/
+    }
+
+    public void compassCalculation(SensorEvent sensorEvent){
+        //COMPASS
+        //Compass animation
+        //Acquiring values
+        int degree;
+        degree = Math.round(sensorEvent.values[0]);
+        RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        ra_comp.setDuration(4000);
+        ra_comp.setFillAfter(true);
+        ra_comp.setRepeatCount(Animation.INFINITE);
+        currentCompass = degree;
+
+        if (cfState) {
+            lIndicator.setAnimation(ra_comp);
+            lIndicator.startAnimation(ra_comp);
+        } else {
+            bIndicator.setAnimation(ra_comp);
+            bIndicator.startAnimation(ra_comp);
+            //Compass text-printed values
+            displayValues.setText(degree + "°");
+        }
+    }
+
+    public void inclinometerCalculation(SensorEvent sensorEvent){
+        //CLINOMETER
+        //Clinometer animation
+        //Acquiring values
+        boolean upsideDown = false;
+        boolean avoidAnimation = false;
+        //int usOffset;
+        int x = Math.round(sensorEvent.values[0]);
+        int y = Math.round(sensorEvent.values[1]);
+        int z = Math.round(sensorEvent.values[2]);
+        //Offsetting y axis
+        if (y == 0) {
+            //nothing
+        } else if ((y > 90) && (y < 179)) {
+            y = 90 - (y - 90);
+        } else if ((y == 180) || (y == -180)) {
+            y = 0;
+        } else if ((y < -90) && (y > -179)) {
+            y = -(90 + (y + 90));
+        }
+        //double y1 = sensorEvent.values[1];
+        double y1 = (double) y;
+        double z1 = sensorEvent.values[2];
+        double posy,
+                posz,
+                ypar,
+                zpar,
+                res,
+                dipDouble;
+        int dipAngle,
+                distance,
+                toDisplay;
+
+        posy = Math.abs(y1);
+        posz = Math.abs(z1);
+        //Converting posy and posz from degrees to radians
+        posy = posy * Math.PI / 180;
+        posz = posz * Math.PI / 180;
+        ypar = Math.sin(posy);
+        zpar = Math.sin(posz);
+        //Finding the resultant vector
+        res = Math.sqrt(Math.pow(ypar, 2.0) + Math.pow(zpar, 2.0));
+        //Angle in degrees
+        dipDouble = (Math.asin(ypar / res) * 180 / Math.PI);
+        dipAngle = (int) dipDouble;
+        //Getting the offset to have the real angle
+        if ((y > 0) && (z > 0)) {
+            //I
+            dipAngle = 90 - dipAngle;
+        } else if ((y > 0) && (z < 0)) {
+            //IV
+            dipAngle = dipAngle + 270;
+        } else if ((y < 0) && (z > 0)) {
+            //II
+            dipAngle = dipAngle + 90;
+        } else if ((y < 0) && (z < 0)) {
+            //III
+            dipAngle = 90 - dipAngle + 180;
+        }else if ((y == 0) && (z > 0)) {
+            dipAngle = 90;
+        } else if ((y == 0) && (z < 0)) {
+            dipAngle = 270;
+        } else if ((y > 0) && (z == 0)) {
+            dipAngle = 0;
+        } else if ((y < 0) && (z == 0)) {
+            dipAngle = 180;
+        } else if ((y == 0) && (z == 0)) {
+            dipAngle = 0;
+        }
+
+        //Finding out if phone is upside down and telling related values
+        if((Math.abs(Math.round(sensorEvent.values[1])) > 90)){
+            upsideDown = true;
+            dipAngle = dipAngle + 180;
+            if(dipAngle >= 360)
+                dipAngle = dipAngle - 360;
+
+        }
+
+        distance = dipAngle - x;
+        //dipAngle = direction of the phone's inclination
+        //Distance dipDirection
+        if (distance <= 0)
+            distance = 360 - x + dipAngle;
+        distance = Math.abs(360 - distance);
+
+
+        //Calculating inclination to display
+        toDisplay = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(y1)), 2.0) +Math.pow(Math.sin(Math.toRadians(z1)), 2.0)))));
+        if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
+            toDisplay = 90;
+
+        //Offsetting dipAngle for animation
+        dipAngle = dipAngle + 180;
+        if(dipAngle >= 360)
+            dipAngle = dipAngle - 360;
+        if((dipAngle > 0) && (dipAngle <= 180)) {
+            //dipAngle = dipAngle + 180;
+            dipAngle = 180 - dipAngle;
+            dipAngle = 180 + dipAngle;
+        }
+        else if((dipAngle > 180) && (dipAngle < 360)) {
+            //dipAngle = dipAngle - 180;
+            dipAngle = dipAngle - 180;
+            dipAngle = 180 - dipAngle;
+        }
+
+        if(upsideDown) {
+            dipAngle = dipAngle + 180;
+            if(dipAngle >= 360)
+                dipAngle = dipAngle - 360;
+        }
+
+            /*This fixes the blink in the animation from 359 to 1 and from 1 to 359
+            if((prevDipangle > 350) && (dipAngle < 10))
+                prevDipangle = 1;
+            else if((prevDipangle < 10) && (dipAngle > 350))
+                prevDipangle = 359;*/
+
+
+        RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
+                0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        ra_clino.setDuration(4000);
+        ra_clino.setFillAfter(true);
+        ra_clino.setRepeatCount(Animation.INFINITE);
+            /*if(upsideDown){
+                dipAngle = dipAngle - 180;
+                if(dipAngle < 0)
+                    dipAngle = 360 + dipAngle;
+            }*/
+        prevDipangle = dipAngle;
+        currentDipdirection = distance;
+        currentInlcination = toDisplay;
+        //displayValues.setText(currentInlcination + "/" + currentDipdirection);
+
+        if(cfState) {
+            if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                bIndicator.setImageResource(R.drawable.sho);
+            }
+            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                bIndicator.setImageResource(R.drawable.mid);
+            }
+            else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
+                    (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
+                bIndicator.setImageResource(R.drawable.nlong);
+            }
+            else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                bIndicator.setImageResource(R.drawable.rlong);
+            }
+            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                bIndicator.setImageResource(R.drawable.rmid);
+            }
+            else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+                bIndicator.setImageResource(R.drawable.rsho);
+            }
+            else if((currentInlcination <= 3) && (currentInlcination >= 0)){
+                bIndicator.setImageResource(R.drawable.cross);
+                bIndicator.clearAnimation();
+                currentDipdirection = 0;
+                avoidAnimation = true;
+            }
+            else if(currentInlcination == 90){
+                bIndicator.setImageResource(R.drawable.point);
+            }
+            bIndicator.getLayoutParams().width = 150;
+            bIndicator.getLayoutParams().height = 150;
+            bIndicator.requestLayout();
+
+            if(avoidAnimation != true) {
+                bIndicator.setAnimation(ra_clino);
+                bIndicator.startAnimation(ra_clino);
+            }
+
+            //Clino text-printed values
+            displayValues.setText(currentInlcination + "/" + currentDipdirection); //CAMBIARE ASSOLUTAMENTE
+            //sendMeasurementData(compassMesurement);
+        }
+        else{
+            if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                lIndicator.setImageResource(R.drawable.sho);
+            }
+            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                lIndicator.setImageResource(R.drawable.mid);
+            }
+            else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+                lIndicator.setImageResource(R.drawable.nlong);
+            }
+            else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                lIndicator.setImageResource(R.drawable.rlong);
+            }
+            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                lIndicator.setImageResource(R.drawable.rmid);
+            }
+            else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+                lIndicator.setImageResource(R.drawable.rsho);
+            }
+            else if((currentInlcination <= 3) && (currentInlcination >= 0)){
+                lIndicator.setImageResource(R.drawable.cross);
+                lIndicator.clearAnimation();
+                avoidAnimation = true;
+            }
+            else if(currentInlcination == 90){
+                lIndicator.setImageResource(R.drawable.point);
+
+            }
+            lIndicator.getLayoutParams().width = 35;
+            lIndicator.getLayoutParams().height = 35;
+            lIndicator.requestLayout();
+
+            if(avoidAnimation != true) {
+                lIndicator.setAnimation(ra_clino);
+                lIndicator.startAnimation(ra_clino);
+            }
+            //Clino text-printed values
+            //displayValues.setText( y + "/" + dipAngle);
+            //sendMeasurementData(compassMesurement);
+        }
+    }
+
+    private void jointCalculation(SensorEvent sensorEvent) {
+        //Calculate values and change images
+    }
+
+    private void cleavageCalculation(SensorEvent sensorEvent) {
+        //Calculate values and change images
+    }
+
+    private void faultCalculation(SensorEvent sensorEvent) {
+        //Calculate values and change images
+    }
+
+    private void lineationCalculation(SensorEvent sensorEvent) {
+        //Calculate values and change images
     }
 }
 
