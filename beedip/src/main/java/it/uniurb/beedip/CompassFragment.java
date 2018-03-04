@@ -249,7 +249,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         currentMeasure.setRockUnit(currentRockunit);
                     if (currentNotes != null)
                         currentMeasure.setNote(currentNotes);
-                    saveMeasurement(new LatLng(lastPositionAvaiable.latitude, lastPositionAvaiable.longitude), currentMeasure);
+                    saveMeasurement(new LatLng(lastPositionAvaiable.latitude, lastPositionAvaiable.longitude), currentMeasure, editFeaturesDatabase, editFeaturesTable);
                     save.setBackgroundResource(R.drawable.save_shape_green);
                     save.setTextColor(Color.parseColor("#32ae16"));
                     resetParameters();
@@ -1075,11 +1075,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
      * Save the Compass Measurement in the selected layer
      */
 
-    private void saveMeasurement(LatLng position, CompassMeasurement measurement ) {
-        if (editFeaturesDatabase != null && editFeaturesTable != null) {
-            GeoPackage geoPackage = manager.open(editFeaturesDatabase);
+    private void saveMeasurement(LatLng position, CompassMeasurement measurement, String db, String feature ) {
+        if (db != null && feature != null) {
+            GeoPackage geoPackage = manager.open(db);
             try {
-                FeatureDao featureDao = geoPackage.getFeatureDao(editFeaturesTable);
+                FeatureDao featureDao = geoPackage.getFeatureDao(feature);
                 long srsId = featureDao.getGeometryColumns().getSrsId();
                 GoogleMapShapeConverter converter = new GoogleMapShapeConverter(
                         featureDao.getProjection());
@@ -1119,13 +1119,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                     getString(R.string.edit_features_save_label),
                                     "GeoPackage error saving");
 
-            } finally {
-                if (geoPackage != null) {
-                    geoPackage.close();
-                }
             }
         }
-        // TODO utilizzare sendMeasurementData per forzare il draw della mappa
     }
 
     private void sendMeasurementData(CompassMeasurement measurement){
