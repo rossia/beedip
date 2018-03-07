@@ -1,6 +1,5 @@
 package it.uniurb.beedip;
 
-import android.*;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -31,19 +30,15 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import java.util.ArrayList;
 import java.util.Date;
 
 import it.uniurb.beedip.data.CompassMeasurement;
@@ -105,15 +100,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     View myView;
     private static SensorManager sensorService;
     private Sensor sensor;
-    //private CompassMeasurement compassMesurement;
-    //private int clickCounter;
-    //private Bussola bussola;
-    //private Inclinometer inclinometro;
-    //private CharSequence choices[];
     private int prevDipangle;
     private boolean msrLock;
     private boolean cfState;
-    //private boolean allowToSave;
     String tmp;
     ImageView lIndicator;
     ImageView bIndicator;
@@ -129,8 +118,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     Button save;
     Button operator;
     Button coordinates;
-    //private double lat;
-    //private double lon;
     LatLng lastPositionAvaiable;
     private CompassMeasurement currentMeasure;
 
@@ -147,7 +134,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private String currentNotes;
     private String currentType;
     private CompassMeasurement.Younging selectedYounging;
-    // fragment to which measurement data is sent
+    // Fragment to which measurement data is sent
     private OnMeasurementSentListener onMeasurementSentListener;
 
 
@@ -200,7 +187,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         displayValues = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
         //SensorManager's initialization (It allow to declare sensor variables)
         sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-        sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION); //---------------------------- change, is deprecated!
         sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
 
         //Buttons init
@@ -215,8 +202,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         save = (Button) getView().findViewById(R.id.save);
         coordinates = (Button) getView().findViewById(R.id.coordinates);
         this.getLocation();
-        coordinates.setText(lastPositionAvaiable.latitude+" / "+lastPositionAvaiable.longitude);
+        String initialCoordinates = lastPositionAvaiable.latitude+" / "+lastPositionAvaiable.longitude;
+        coordinates.setText(initialCoordinates);
         pLock.setVisibility(View.GONE);
+
+        /*-------------------------------------------SAVE BUTTON---------------------------------------------------------------------------------------------*/
         save.setBackgroundResource(R.drawable.save_shape_red);
         save.setTextColor(Color.parseColor("#e11919"));
         save.setOnClickListener(new View.OnClickListener() {
@@ -259,6 +249,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         save.setEnabled(false);
         save.setText("");
 
+
+        /*-------------------------------------------COORDINATES BUTTON---------------------------------------------------------------------------------------------*/
         coordinates.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -269,7 +261,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
 
 
-        //Button relative to the little clock face
+        /*-------------------------------------------LITTLE CLOCK FACE BUTTON---------------------------------------------------------------------------------------------*/
         littleClockFace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -292,7 +284,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             }
 
         });
-        //Creation of clock face's buttons
+        /*-------------------------------------------BIG CLOCK FACE BUTTON---------------------------------------------------------------------------------------------*/
         //By simple click on button
         bigClockFace.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -334,14 +326,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             }
         });
 
-        //Rock Unit button
+        /*-------------------------------------------ROCK UNIT BUTTON---------------------------------------------------------------------------------------------*/
         rockUnit.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //alertDialog.setTitle("Rock Unit");
-                //alertDialog.setMessage("Write a rock unit");
 
                 View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_r, null);
 
@@ -377,23 +367,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 );
                 // Set the alert dialog message using spannable string builder
                 alertDialog.setMessage(ssBuildermessage);
-
-
-
-                /*final EditText input = new EditText(getActivity());
-                //final EditText input = (EditText) getActivity().findViewById(R.id.prova);
-                //final TextView input = (TextView) customStyle.findViewById(R.id.prova);
-                input.setTextColor(Color.parseColor("#f2de00"));
-                //input.setHighlightColor(Color.parseColor("#f2de00"));
-                if (currentRockunit != null) {
-                    input.setText(currentRockunit);
-                    input.setSelectAllOnFocus(true);
-                }
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT);
-                input.setLayoutParams(lp);
-                alertDialog.setView(input);*/
 
                 final TextView input = (TextView) customStyle.findViewById(R.id.etext_r);
                 if (currentRockunit != null) {
@@ -437,14 +410,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Surveyor button
+        /*-------------------------------------------SURVEYOR BUTTON---------------------------------------------------------------------------------------------*/
         operator.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //alertDialog.setTitle("Surveyor");
-                //alertDialog.setMessage("Write the Surveyor's name");
 
                 View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
 
@@ -480,19 +451,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 // Set the alert dialog message using spannable string builder
                 alertDialog.setMessage(ssBuildermessage);
 
-
-                /*final EditText input = new EditText(getActivity());
-                input.setTextColor(Color.parseColor("#f2de00"));
-                if (currentSurveyor != null) {
-                    input.setText(currentSurveyor);
-                    input.setSelectAllOnFocus(true);
-                }
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT);
-                input.setLayoutParams(lp);
-                alertDialog.setView(input);*/
-
                 final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
                 if (currentSurveyor != null) {
                     input.setText(currentSurveyor);
@@ -523,14 +481,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                //alertDialog.show();
-
-
-
-
-
-
-
 
                 AlertDialog dialog = alertDialog.create();
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
@@ -540,14 +490,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Locality button
+        /*-------------------------------------------LOCALITY BUTTON---------------------------------------------------------------------------------------------*/
         locality.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //alertDialog.setTitle("Location");
-                //alertDialog.setMessage("Write the Location.");
 
                 View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_l, null);
 
@@ -583,19 +531,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 // Set the alert dialog message using spannable string builder
                 alertDialog.setMessage(ssBuildermessage);
 
-                /*final EditText input = new EditText(getActivity());
-                input.setTextColor(Color.parseColor("#f2de00"));
-                if (currentLocation != null) {
-                    input.setText(currentLocation);
-                    input.setSelectAllOnFocus(true);
-                }
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT);
-                input.setLayoutParams(lp);
-                alertDialog.setView(input);*/
-                //Do you want to set an icon?
-                //alertDialog.setIcon(R.drawable.ICON_ID);
+                /*Do you want to set an icon?
+                alertDialog.setIcon(R.drawable.ICON_ID);*/
 
                 final TextView input = (TextView) customStyle.findViewById(R.id.etext_l);
                 if (currentLocation != null) {
@@ -626,7 +563,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                //alertDialog.show();
+
                 AlertDialog dialog = alertDialog.create();
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
                 dialog.setView(customStyle);
@@ -635,7 +572,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Type button
+        /*-------------------------------------------TYPE BUTTON---------------------------------------------------------------------------------------------*/
         type.setText(currentType);
         type.setOnClickListener(new View.OnClickListener() {
 
@@ -643,7 +580,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             public void onClick(View arg0) {
                 //Printing popup menu
                 AlertDialog.Builder dialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //dialog.setTitle("Pick a type");
 
                 //CHANGING ALERT DIALOG TITLE'S COLOR
                 // Specify the alert dialog title
@@ -678,7 +614,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Accuracy button
+        /*-------------------------------------------ACCURACY BUTTON---------------------------------------------------------------------------------------------*/
         accuracy.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -686,15 +622,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 isAccurate = !isAccurate;
                 //Changing button color
                 if (!isAccurate) {
-                    //accuracy.setBackgroundColor(Color.RED);
-                    //accuracy.setBackgroundColor(Color.parseColor("#e11919"));
-                    //accuracy.setBackgroundResource(R.drawable.accuracy_red);
+                    //If it's not accurate then the text will be red
                     accuracy.setTextColor(Color.parseColor("#e11919"));
                 }
                 else{
-                    //accuracy.setBackgroundColor(Color.GREEN);
-                    //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-                    //accuracy.setBackgroundResource(R.drawable.accuracy_green);
+                    //if it's accurate then the text will be green
                     accuracy.setTextColor(Color.parseColor("#32ae16"));
                 }
                 if (currentMeasure != null) {
@@ -705,7 +637,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Note button
+        /*-------------------------------------------NOTE BUTTON---------------------------------------------------------------------------------------------*/
         note.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -787,7 +719,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-
         // This makes sure that the container activity has implemented
         // the callback interface. If not, it throws an exception
         try {
@@ -800,7 +731,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        //TO END TO DEFINE
         if (currentMeasure == null) {
             if(!features.isEmpty()) {
                 //Do something while feature list is not empty
@@ -810,23 +740,23 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         switch (i){
                             case 0:
                                 this.compassCalculation(sensorEvent);
-                                this.inclinometerCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
                                 break;
                             case 1:
                                 this.compassCalculation(sensorEvent);
-                                this.cleavageCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
                                 break;
                             case 2:
                                 this.compassCalculation(sensorEvent);
-                                this.jointCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
                                 break;
                             case 3:
                                 this.compassCalculation(sensorEvent);
-                                this.faultCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
                                 break;
                             case 4:
                                 this.compassCalculation(sensorEvent);
-                                this.lineationCalculation(sensorEvent);
+                                this.lineCalculation(sensorEvent);
                                 break;
                         }
                     }
@@ -836,7 +766,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 //Do something when feature list is empty
                 //Bedding as default? (Dunno!)
                 this.compassCalculation(sensorEvent);
-                this.inclinometerCalculation(sensorEvent);
+                this.planeCalculation(sensorEvent);
             }
         }
     }
@@ -952,13 +882,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private void resetParameters() {
         currentNotes = null;
         note.setTextColor(Color.parseColor("#f2de00"));
-        //currentType = (String) choices[0];
-        //type.setText(currentType);
         currentRockunit = null;
         rockUnit.setTextColor(Color.parseColor("#f2de00"));
         isAccurate = true;
-        //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-        //accuracy.setBackgroundResource(R.drawable.accuracy_green);
         accuracy.setTextColor(Color.parseColor("#32ae16"));
     }
 
@@ -981,53 +907,58 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             // for ActivityCompat#requestPermissions for more details.
         }
         //Getting coarse position.
-        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new android.location.LocationListener(){
-            @Override
-            public void onLocationChanged(Location location) {
-                lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
-                String tmpLon = String.format("%.5f", location.getLatitude());
-                String tmpLat = String.format("%.5f", location.getLongitude());
-                coordinates.setText(tmpLat+" / "+tmpLon);
-            }
+        try {
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new android.location.LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    lastPositionAvaiable = new LatLng(location.getLatitude(), location.getLongitude());
+                    String position = location.getLatitude() + " / " + location.getLongitude();
+                    coordinates.setText(position);
+                }
 
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
 
-            }
+                }
 
-            @Override
-            public void onProviderEnabled(String provider) {
+                @Override
+                public void onProviderEnabled(String provider) {
 
-            }
+                }
 
-            @Override
-            public void onProviderDisabled(String provider) {
+                @Override
+                public void onProviderDisabled(String provider) {
 
-            }
-        });
-        //If able to, overwriting coarse position with finer one.
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 60, 2, new android.location.LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
-                coordinates.setText(location.getLatitude()+" / "+location.getLongitude());
-            }
+                }
+            });
+            //If able to, overwriting coarse position with finer one.
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 60, 2, new android.location.LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    lastPositionAvaiable = new LatLng(location.getLatitude(), location.getLongitude());
+                    String position = location.getLatitude() + " / " + location.getLongitude();
+                    coordinates.setText(position);
+                }
 
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
 
-            }
+                }
 
-            @Override
-            public void onProviderEnabled(String provider) {
+                @Override
+                public void onProviderEnabled(String provider) {
 
-            }
+                }
 
-            @Override
-            public void onProviderDisabled(String provider) {
+                @Override
+                public void onProviderDisabled(String provider) {
 
-            }
-        });
+                }
+            });
+        }
+        catch(NullPointerException e){
+            System.out.println(e);
+        }
     }
 
     public void turnOnGPS(){
@@ -1108,6 +1039,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //COMPASS
         //Compass animation
         //Acquiring values
+        String toShow;
         int degree;
         degree = Math.round(sensorEvent.values[0]);
         RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
@@ -1115,7 +1047,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         ra_comp.setFillAfter(true);
         ra_comp.setRepeatCount(Animation.INFINITE);
         currentCompass = degree;
-
         if (cfState) {
             lIndicator.setAnimation(ra_comp);
             lIndicator.startAnimation(ra_comp);
@@ -1123,14 +1054,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             bIndicator.setAnimation(ra_comp);
             bIndicator.startAnimation(ra_comp);
             //Compass text-printed values
-            displayValues.setText(degree + "°");
+            toShow = degree + "°";
+            displayValues.setText(toShow);
         }
     }
 
-    public void inclinometerCalculation(SensorEvent sensorEvent){
-        //CLINOMETER
-        //Clinometer animation
+    public void planeCalculation(SensorEvent sensorEvent){
+        //INCLINOMETER
         //Acquiring values
+        String toShow;
         boolean upsideDown = false;
         boolean avoidAnimation = false;
         //int usOffset;
@@ -1147,7 +1079,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         } else if ((y < -90) && (y > -179)) {
             y = -(90 + (y + 90));
         }
-        //double y1 = sensorEvent.values[1];
         double y1 = (double) y;
         double z1 = sensorEvent.values[2];
         double posy,
@@ -1224,12 +1155,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         if(dipAngle >= 360)
             dipAngle = dipAngle - 360;
         if((dipAngle > 0) && (dipAngle <= 180)) {
-            //dipAngle = dipAngle + 180;
             dipAngle = 180 - dipAngle;
             dipAngle = 180 + dipAngle;
         }
         else if((dipAngle > 180) && (dipAngle < 360)) {
-            //dipAngle = dipAngle - 180;
             dipAngle = dipAngle - 180;
             dipAngle = 180 - dipAngle;
         }
@@ -1240,27 +1169,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 dipAngle = dipAngle - 360;
         }
 
-            /*This fixes the blink in the animation from 359 to 1 and from 1 to 359
-            if((prevDipangle > 350) && (dipAngle < 10))
-                prevDipangle = 1;
-            else if((prevDipangle < 10) && (dipAngle > 350))
-                prevDipangle = 359;*/
-
-
         RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
         ra_clino.setDuration(4000);
         ra_clino.setFillAfter(true);
         ra_clino.setRepeatCount(Animation.INFINITE);
-            /*if(upsideDown){
-                dipAngle = dipAngle - 180;
-                if(dipAngle < 0)
-                    dipAngle = 360 + dipAngle;
-            }*/
         prevDipangle = dipAngle;
         currentDipdirection = distance;
         currentInlcination = toDisplay;
-        //displayValues.setText(currentInlcination + "/" + currentDipdirection);
 
         if(cfState) {
             if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
@@ -1295,13 +1211,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             bIndicator.getLayoutParams().height = 150;
             bIndicator.requestLayout();
 
-            if(avoidAnimation != true) {
+            if(!avoidAnimation) {
                 bIndicator.setAnimation(ra_clino);
                 bIndicator.startAnimation(ra_clino);
             }
-
             //Clino text-printed values
-            displayValues.setText(currentInlcination + "/" + currentDipdirection); //CAMBIARE ASSOLUTAMENTE
+            toShow = currentInlcination+"/"+currentDipdirection;
+            displayValues.setText(toShow);
             //sendMeasurementData(compassMesurement);
         }
         else{
@@ -1336,29 +1252,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             lIndicator.getLayoutParams().height = 35;
             lIndicator.requestLayout();
 
-            if(avoidAnimation != true) {
+            if(!avoidAnimation) {
                 lIndicator.setAnimation(ra_clino);
                 lIndicator.startAnimation(ra_clino);
             }
-            //Clino text-printed values
-            //displayValues.setText( y + "/" + dipAngle);
-            //sendMeasurementData(compassMesurement);
         }
     }
 
-    private void jointCalculation(SensorEvent sensorEvent) {
-        //Calculate values and change images
-    }
-
-    private void cleavageCalculation(SensorEvent sensorEvent) {
-        //Calculate values and change images
-    }
-
-    private void faultCalculation(SensorEvent sensorEvent) {
-        //Calculate values and change images
-    }
-
-    private void lineationCalculation(SensorEvent sensorEvent) {
+    private void lineCalculation(SensorEvent sensorEvent) {
         //Calculate values and change images
     }
 }
