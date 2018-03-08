@@ -39,6 +39,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import it.uniurb.beedip.data.CompassMeasurement;
@@ -133,9 +134,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private String currentLocation;
     private String currentNotes;
     private String currentType;
+    private String currentSubtype;
+    /*These two are used only for fault as type*/
+    private String currentKindicators;
+    private int currentDisplacement;
+    /*-----------------------------------------*/
     private CompassMeasurement.Younging selectedYounging;
     // Fragment to which measurement data is sent
     private OnMeasurementSentListener onMeasurementSentListener;
+    private List<String> faultSubtypes;
 
 
     //TODO creare il costruttore
@@ -155,9 +162,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         currentNotes = null;
         currentRockunit = null;
         currentSurveyor = null;
+        currentSubtype = null;
+        currentDisplacement = -1; //Incoherent lenght value when not defined
+        currentKindicators = null;
         selectedYounging = CompassMeasurement.Younging.UPRIGHT;
         lastPositionAvaiable = new LatLng(43.70018, 12.64063);
         features = new LinkedList<>();
+        faultSubtypes = new LinkedList<String>(Arrays.asList("Normal","Reverse","Dextral ss","Sinixtral ss"));
         getLocation();
 
 
@@ -189,7 +200,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
         sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION); //---------------------------- change, is deprecated!
         sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
-
         //Buttons init
         bigClockFace = (ImageButton) getView().findViewById(R.id.bigClockface);
         littleClockFace = (ImageButton) getView().findViewById(R.id.littleClockface);
@@ -297,6 +307,26 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                    if(!features.isEmpty()) {
                        save.setBackgroundResource(R.drawable.save_shape_blue);
                        save.setTextColor(Color.parseColor("#00d2ff"));
+                       //Switch to engage alertdialog to gain subtype on lock
+                       for(int i = 0; i < features.size(); i++) {
+                           if (features.get(i).equals(currentType)) {
+                               switch (i) {
+                                   //case 0 do not need subtype
+                                   case 1:
+                                       getTextSubtype();
+                                       break;
+                                   //case 2 do not need subtype
+                                   case 3:
+                                       getListSubtype();
+                                       getDisplacement();
+                                       getKindicators();
+                                       break;
+                                   case 4:
+                                       getTextSubtype();
+                                       break;
+                               }
+                           }
+                       }
                    }
                } else {
                    currentMeasure = null;
@@ -605,8 +635,16 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     @Override
                     public void onClick(DialogInterface dialog, int selected) {
                         editFeaturesTable = featuresAdapter.getItem(selected);
-                        currentType = (String) editFeaturesTable;
+                        currentType = editFeaturesTable;
                         type.setText(currentType);
+                        //If current type is  bedding enable long press on big clock face
+                        if(features.get(0).equals(currentType)){
+                            setLongPress();
+                        }
+                        //else disable it
+                        else{
+                            bigClockFace.cancelLongPress();
+                        }
                         dialog.dismiss();
                     }
                 }).create().show();
@@ -886,6 +924,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         rockUnit.setTextColor(Color.parseColor("#f2de00"));
         isAccurate = true;
         accuracy.setTextColor(Color.parseColor("#32ae16"));
+        currentSubtype = null;
+        currentDisplacement = -1; //Incoherent lenght value when not defined
+        currentKindicators = null;
     }
 
     private void getLocation(){
@@ -1261,6 +1302,273 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     private void lineCalculation(SensorEvent sensorEvent) {
         //Calculate values and change images
+    }
+
+    private void setLongPress(){
+        bigClockFace.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                //Switch from isUpright indicator to normal and viceversa
+                isUpright = !isUpright;
+                return true;
+            }
+        });
+    }
+
+    /*-----------------FUNCTION TO ACQUIRE DATA ON BIG CLOCK FACE LOCK-------------------------------------------------------------------------------------------------------*/
+
+    private void getTextSubtype(){
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
+        //CHAGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Type";
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        alertDialog.setTitle(ssBuilder);
+
+        //CHANGING ALERT DIALOG MESSAGE'S COLOR
+        // Specify the alert dialog message
+        String messageText = "Define the "+currentType+" type.";
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+        // Apply the text color span
+        ssBuildermessage.setSpan(
+                foregroundColorSpan,
+                0,
+                messageText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog message using spannable string builder
+        alertDialog.setMessage(ssBuildermessage);
+
+        final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
+        if (currentSubtype != null) {
+            input.setText(currentSubtype);
+            input.setSelectAllOnFocus(true);
+        }
+
+        input.setHighlightColor(Color.parseColor("#4d4d4d"));
+
+        alertDialog.setPositiveButton("Set",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        tmp = input.getText().toString();
+                        if (!tmp.equals("")) {
+                            currentSubtype = tmp;
+                        }
+                        else {
+                            currentSubtype = null;
+                        }
+
+                    }
+                });
+
+        alertDialog.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+        AlertDialog dialog = alertDialog.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        dialog.setView(customStyle);
+        dialog.show();
+    }
+
+    private void getListSubtype(){
+        //Printing popup menu
+        AlertDialog.Builder dialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+
+        //CHANGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Choose a type of "+ currentType;
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        dialog.setTitle(ssBuilder);
+
+
+        final ArrayAdapter<String> featuresAdapter = new ArrayAdapter<String>(
+                getActivity(), android.R.layout.simple_spinner_item, faultSubtypes);
+        dialog.setAdapter(featuresAdapter, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int selected) {
+                //editFeaturesTable = featuresAdapter.getItem(selected);
+                //currentType = editFeaturesTable;
+                currentSubtype = faultSubtypes.get(selected);
+                dialog.dismiss();
+            }
+        }).create().show();
+    }
+
+    private void getDisplacement(){
+
+
+
+        //SAREBBE DA RIFARE L'XML Di "AlertDialogCustom" IN MODO TALE DA SETTARE DIRETTAMENTE DA LI' TASTIERA E TIPO DI INPUT
+
+
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
+        //CHAGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Displacement";
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        alertDialog.setTitle(ssBuilder);
+
+        //CHANGING ALERT DIALOG MESSAGE'S COLOR
+        // Specify the alert dialog message
+        String messageText = "Define the displacement.";
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+        // Apply the text color span
+        ssBuildermessage.setSpan(
+                foregroundColorSpan,
+                0,
+                messageText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog message using spannable string builder
+        alertDialog.setMessage(ssBuildermessage);
+
+        final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
+        if (currentDisplacement >= 0) {
+            input.setText(currentDisplacement);
+            input.setSelectAllOnFocus(true);
+            input.setInputType(InputType.TYPE_CLASS_PHONE); //IF KEYBOARD STAY "PHONE" LOOK FOR THE ERROR RIGHT HEEEEEERRREEEEEEE ;) ;) ;)
+        }
+
+        input.setHighlightColor(Color.parseColor("#4d4d4d"));
+
+        alertDialog.setPositiveButton("Set",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        tmp = input.getText().toString();
+                        if (!tmp.equals("")) {
+                            currentSubtype = tmp;
+                        }
+                        else {
+                            currentSubtype = null;
+                        }
+
+                    }
+                });
+
+        alertDialog.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+        AlertDialog dialog = alertDialog.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        dialog.setView(customStyle);
+        dialog.show();
+    }
+
+    private void getKindicators(){
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
+        //CHAGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Kinematics indicators";
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        alertDialog.setTitle(ssBuilder);
+
+        //CHANGING ALERT DIALOG MESSAGE'S COLOR
+        // Specify the alert dialog message
+        String messageText = "Define the kinematics indicators.";
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+        // Apply the text color span
+        ssBuildermessage.setSpan(
+                foregroundColorSpan,
+                0,
+                messageText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog message using spannable string builder
+        alertDialog.setMessage(ssBuildermessage);
+
+        final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
+        if (currentKindicators != null) {
+            input.setText(currentKindicators);
+            input.setSelectAllOnFocus(true);
+        }
+
+        input.setHighlightColor(Color.parseColor("#4d4d4d"));
+
+        alertDialog.setPositiveButton("Set",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        tmp = input.getText().toString();
+                        if (!tmp.equals("")) {
+                            currentKindicators = tmp;
+                        }
+                        else {
+                            currentKindicators = null;
+                        }
+
+                    }
+                });
+
+        alertDialog.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+        AlertDialog dialog = alertDialog.create();
+
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        dialog.setView(customStyle);
+        dialog.show();
     }
 }
 
