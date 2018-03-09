@@ -1424,14 +1424,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     private void getDisplacement(){
 
-
-
-        //SAREBBE DA RIFARE L'XML Di "AlertDialogCustom" IN MODO TALE DA SETTARE DIRETTAMENTE DA LI' TASTIERA E TIPO DI INPUT
-
-
-
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
+        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_int, null);
         //CHAGING ALERT DIALOG TITLE'S COLOR
         // Specify the alert dialog title
         String titleText = "Displacement";
