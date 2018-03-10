@@ -168,7 +168,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         selectedYounging = CompassMeasurement.Younging.UPRIGHT;
         lastPositionAvaiable = new LatLng(43.70018, 12.64063);
         features = new LinkedList<>();
-        faultSubtypes = new LinkedList<String>(Arrays.asList("Normal","Reverse","Dextral ss","Sinixtral ss"));
+        faultSubtypes = new LinkedList<String>(Arrays.asList("Normal","Reverse","Dextral ss","Sinixtral ss","Not defined"));
         getLocation();
 
 
@@ -318,8 +318,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                    //case 2 do not need subtype
                                    case 3:
                                        getListSubtype();
-                                       getDisplacement();
-                                       getKindicators();
+                                       //getDisplacement(); ---> Do Not Work
                                        break;
                                    case 4:
                                        getTextSubtype();
@@ -351,7 +350,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public boolean onLongClick(View v) {
                 //Switch from isUpright indicator to normal and viceversa
-                isUpright = !isUpright;
+                //Only if currentType = "bedding"
+                if(features.get(0).equals(currentType))
+                    isUpright = !isUpright;
                 return true;
             }
         });
@@ -637,14 +638,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         editFeaturesTable = featuresAdapter.getItem(selected);
                         currentType = editFeaturesTable;
                         type.setText(currentType);
-                        //If current type is  bedding enable long press on big clock face
-                        if(features.get(0).equals(currentType)){
-                            setLongPress();
-                        }
-                        //else disable it
-                        else{
-                            bigClockFace.cancelLongPress();
-                        }
                         dialog.dismiss();
                     }
                 }).create().show();
@@ -1302,17 +1295,35 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     private void lineCalculation(SensorEvent sensorEvent) {
         //Calculate values and change images
-    }
+        String toShow;
+        if(cfState) {
+            currentDipdirection = Math.round(sensorEvent.values[0]);
+            currentInlcination = Math.round(sensorEvent.values[1]);
 
-    private void setLongPress(){
-        bigClockFace.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                //Switch from isUpright indicator to normal and viceversa
-                isUpright = !isUpright;
-                return true;
+            if(currentInlcination <= 90 && currentInlcination >= 0){
+                //Nothing
             }
-        });
+            else if(((currentInlcination < 180) && (currentInlcination > 90)) || (Math.abs(currentInlcination) == 180)) {
+                currentInlcination = Math.abs(Math.abs(currentInlcination) - 180);
+                currentDipdirection += 180;
+                if(currentDipdirection > 360){
+                    currentDipdirection -= 360;
+                }
+            }
+            else if((currentInlcination > -180) && (currentInlcination <= -90)) {
+                currentInlcination = Math.abs(currentInlcination + 180);
+            }
+            else if((currentInlcination > -90) && (currentInlcination < 0)) {
+                currentInlcination = Math.abs(currentInlcination);
+                currentDipdirection += 180;
+                if(currentDipdirection > 360){
+                    currentDipdirection -= 360;
+                }
+            }
+            toShow = currentInlcination + "/" + currentDipdirection;
+            displayValues.setText(toShow);
+        }
+            //Need to implement the part for the graphic response
     }
 
     /*-----------------FUNCTION TO ACQUIRE DATA ON BIG CLOCK FACE LOCK-------------------------------------------------------------------------------------------------------*/
@@ -1416,8 +1427,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             public void onClick(DialogInterface dialog, int selected) {
                 //editFeaturesTable = featuresAdapter.getItem(selected);
                 //currentType = editFeaturesTable;
-                currentSubtype = faultSubtypes.get(selected);
+                if(selected < (faultSubtypes.size() - 1)) //"Not defined" it has to be last element
+                    currentSubtype = faultSubtypes.get(selected);
+                else
+                    currentSubtype = null;
                 dialog.dismiss();
+                getDisplacement();
+                //getKindicators();
             }
         }).create().show();
     }
@@ -1458,11 +1474,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         // Set the alert dialog message using spannable string builder
         alertDialog.setMessage(ssBuildermessage);
 
-        final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
+        final TextView input = (TextView) customStyle.findViewById(R.id.etext_int);
         if (currentDisplacement >= 0) {
-            input.setText(currentDisplacement);
+            input.setText(String.valueOf(currentDisplacement));
             input.setSelectAllOnFocus(true);
-            input.setInputType(InputType.TYPE_CLASS_PHONE); //IF KEYBOARD STAY "PHONE" LOOK FOR THE ERROR RIGHT HEEEEEERRREEEEEEE ;) ;) ;)
         }
 
         input.setHighlightColor(Color.parseColor("#4d4d4d"));
@@ -1472,11 +1487,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     public void onClick(DialogInterface dialog, int which) {
                         tmp = input.getText().toString();
                         if (!tmp.equals("")) {
-                            currentSubtype = tmp;
+                            currentDisplacement = Integer.parseInt(tmp);
                         }
                         else {
-                            currentSubtype = null;
+                            currentDisplacement = -1;
                         }
+                        getKindicators();
 
                     }
                 });
@@ -1485,6 +1501,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
+                        getKindicators();
                     }
                 });
 
