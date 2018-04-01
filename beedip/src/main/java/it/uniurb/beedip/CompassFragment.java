@@ -70,8 +70,6 @@ import static android.content.Context.LOCATION_SERVICE;
 
 public class CompassFragment extends Fragment implements SensorEventListener {
 
-    //Dichiarazione variabili geopackage dao
-    // TODO impostare private datasource
 
     /**
      * GeoPackage manager
@@ -149,7 +147,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private OnMeasurementSentListener onMeasurementSentListener;
 
 
-    //TODO creare il costruttore
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -249,12 +246,17 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         currentMeasure.setRockUnit(currentRockunit);
                     if (currentNotes != null)
                         currentMeasure.setNote(currentNotes);
-                    saveMeasurement(new LatLng(lastPositionAvaiable.latitude, lastPositionAvaiable.longitude), currentMeasure, editFeaturesDatabase, editFeaturesTable);
+                    try {
+                        saveMeasurement(new LatLng(lastPositionAvaiable.latitude, lastPositionAvaiable.longitude), currentMeasure, editFeaturesDatabase, editFeaturesTable);
+                    } catch (NullPointerException e) {
+                    Toast.makeText(getActivity(),"Not able to save a null measurement", Toast.LENGTH_LONG).show();
+                    }
+
                     save.setBackgroundResource(R.drawable.save_shape_green);
                     save.setTextColor(Color.parseColor("#32ae16"));
                     resetParameters();
                 }
-                else{
+                else {
                     featureTableToast = Toast.makeText(getActivity(),
                             "Not able to save if clock face is not locked.", Toast.LENGTH_LONG);
                     featureTableToast.show();
@@ -1075,8 +1077,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
      * Save the Compass Measurement in the selected layer
      */
 
-    private void saveMeasurement(LatLng position, CompassMeasurement measurement, String db, String feature ) {
-        if (db != null && feature != null) {
+    private long saveMeasurement(LatLng position, CompassMeasurement measurement, String db, String feature ) throws  NullPointerException {
+        if (measurement != null )
+            throw new NullPointerException();
+        long resultRowId = -1;
+        if (db != null && feature != null && manager != null) {
             GeoPackage geoPackage = manager.open(db);
             try {
                 FeatureDao featureDao = geoPackage.getFeatureDao(feature);
@@ -1085,8 +1090,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         featureDao.getProjection());
                 final mil.nga.wkb.geom.Point point = converter.toPoint(position);
                         FeatureRow newPoint = featureDao.newRow();
-                newPoint.setValue(getString(R.string.dip_field_name), measurement.getDip());
-                newPoint.setValue(getString(R.string.dip_direction_field_name), measurement.getDipDirection());
+                if (measurement.getDip() > 0)
+                    newPoint.setValue(getString(R.string.dip_field_name), measurement.getDip());
+                if (measurement.getDipDirection() > 0)
+                    newPoint.setValue(getString(R.string.dip_direction_field_name), measurement.getDipDirection());
                 newPoint.setValue(getString(R.string.accuracy_field_name), measurement.isAccurate());
                 newPoint.setValue(getString(R.string.orientation_field_name), measurement.getYounging());
                 if (measurement.getRockUnit() != null) {
@@ -1101,16 +1108,16 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 if (measurement.getNote() != null) {
                     newPoint.setValue(getString(R.string.userNote_field_name), measurement.getNote());
                 }
-
                 GeoPackageGeometryData pointGeomData = new GeoPackageGeometryData(srsId);
                 pointGeomData.setGeometry(point);
                 newPoint.setGeometry(pointGeomData);
-                featureDao.insert(newPoint);
+                resultRowId = featureDao.insert(newPoint);
                 Contents contents = featureDao.getGeometryColumns().getContents();
                 contents.setLastChange(new Date());
                 ContentsDao contentsDao = geoPackage.getContentsDao();
                 contentsDao.update(contents);
                 active.setModified(true);
+
             } catch (Exception e) {
 
                     GeoPackageUtils
@@ -1121,6 +1128,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
             }
         }
+        return resultRowId;
     }
 
     private void sendMeasurementData(CompassMeasurement measurement){

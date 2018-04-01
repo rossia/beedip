@@ -94,7 +94,7 @@ public class MainActivity extends Activity implements
     private GeoPackageManagerFragment managerFragment;
 
     /**
-     * Manager fragment
+     * Compass fragment
      */
     private CompassFragment compassFragment;
 
@@ -326,7 +326,7 @@ public class MainActivity extends Activity implements
                 break;
         }
     }
-    // TODO: rimuovere non serve
+    // TODO: rimuovere se non serve
     @Override
     public void onMeasurementSent(CompassMeasurement compassMeasurement) {
         mapFragment.setMeasurement(compassMeasurement);

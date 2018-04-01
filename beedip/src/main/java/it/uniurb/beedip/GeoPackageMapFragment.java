@@ -429,7 +429,6 @@ public class GeoPackageMapFragment extends Fragment implements
     /**
      * Compass Measurement
      */
-    // TODO da eliminare
     private CompassMeasurement compassMeasurement = null;
 
     /**

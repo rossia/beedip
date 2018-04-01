@@ -11,7 +11,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Color;
@@ -43,14 +42,12 @@ import android.widget.CheckedTextView;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.ipaulpro.afilechooser.utils.FileUtils;
-import com.j256.ormlite.table.DatabaseTable;
 
 import org.osgeo.proj4j.units.DegreeUnit;
 
@@ -103,7 +100,6 @@ import it.uniurb.beedip.data.GeoPackageDatabases;
 import it.uniurb.beedip.data.GeoPackageFeatureOverlayTable;
 import it.uniurb.beedip.data.GeoPackageFeatureTable;
 import it.uniurb.beedip.data.GeoPackageTable;
-import it.uniurb.beedip.data.GeoPackageTableType;
 import it.uniurb.beedip.data.GeoPackageTileTable;
 import it.uniurb.beedip.filter.InputFilterMinMax;
 import it.uniurb.beedip.indexer.IIndexerTask;
@@ -3179,7 +3175,7 @@ public class GeoPackageManagerFragment extends Fragment implements
                 break;
             case it.uniurb.beedip.R.id.create_geopackage:
                 //createGeoPackage();
-                CreateFromTemplate(getActivity());
+                createNewProject(getActivity());
                 break;
             /*
             case it.uniurb.beedip.R.id.clear_selected_tables:
@@ -4007,68 +4003,59 @@ public class GeoPackageManagerFragment extends Fragment implements
      * Create db from a Template
      *
      */
-    private void CreateFromTemplate(Context context) {
+    private boolean createFromTemplate(Context context, String projectName){
         final File exportDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         final String templateFileName = "template.gpkg";
         final String templateDatabaseName = "template";
-
+        boolean result = false;
         try {
-            InputStream dbIs = context.getAssets().open(templateFileName);
-            if (manager.importGeoPackage(templateDatabaseName,dbIs, true) ) {
+            InputStream templateFile = context.getAssets().open(templateFileName);
+            if (manager.importGeoPackage(templateDatabaseName,templateFile, true) ) {
+                    manager.exportGeoPackage(templateDatabaseName,
+                           projectName, exportDirectory);
+                    String exportedFileName = projectName + ".gpkg";
+                    final File exportedFilePath = new File (exportDirectory,exportedFileName);
+                    result = manager.importGeoPackageAsExternalLink(exportedFilePath,projectName);
+                    update();
+                }
+        } catch (Exception e) {
+            GeoPackageUtils.showMessage(
+                            getActivity(),
+                            getString(R.string.geopackage_create_label),
+                            e.getMessage());
+        } finally {
+        manager.delete(templateDatabaseName);
+        update();
+    }
+    return result;
+}
+    private void createNewProject(final Context context) {
+        final File exportDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        final EditText input = new EditText(getActivity());
+        input.setText("myProject");
+        AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity(), R.style.AppCompatAlertDialogStyle)
+                .setTitle(getString(R.string.geopackage_create_label))
+                .setMessage(exportDirectory.getPath() + File.separator)
+                .setView(input)
+                .setPositiveButton(getString(R.string.button_ok_label),
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,
+                                                int whichButton) {
+                                String newProjectName = input.getText().toString();
+                                if (newProjectName != null && !newProjectName.isEmpty() && createFromTemplate(context, newProjectName)) {
+                                    // OK
+                                }
+                            }
+                        })
+                .setNegativeButton(getString(R.string.button_cancel_label),
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,
+                                                int whichButton) {
+                                dialog.cancel();
+                            }
+                        });
 
-                final EditText input = new EditText(getActivity());
-                input.setText("myProject");
-                AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity(), R.style.AppCompatAlertDialogStyle)
-                        .setTitle(getString(R.string.geopackage_create_label))
-                        .setMessage(exportDirectory.getPath() + File.separator)
-                        .setView(input)
-                        .setPositiveButton(getString(R.string.button_ok_label),
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog,
-                                                        int whichButton) {
-                                        String value = input.getText().toString();
-                                        if (value != null && !value.isEmpty()) {
-                                            try {
-                                                manager.exportGeoPackage(templateDatabaseName,
-                                                        value, exportDirectory);
-                                                String exportedFileName = value + ".gpkg";
-                                                final File exportedFilePath = new File (exportDirectory,exportedFileName);
-                                                manager.importGeoPackageAsExternalLink(exportedFilePath,value);
-                                                update();
-
-                                            } catch (Exception e) {
-                                                GeoPackageUtils
-                                                        .showMessage(
-                                                                getActivity(),
-                                                                getString(R.string.geopackage_create_label),
-                                                                e.getMessage());
-                                            } finally {
-                                                manager.delete(templateDatabaseName);
-                                                update();
-
-                                            }
-                                        }
-                                    }
-                                })
-                        .setNegativeButton(getString(R.string.button_cancel_label),
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog,
-                                                        int whichButton) {
-                                        dialog.cancel();
-                                        manager.delete(templateDatabaseName);
-                                        update();
-                                    }
-                                });
-
-                dialog.show();
-            }
-        } catch (GeoPackageException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
+        dialog.show();
     }
 
 

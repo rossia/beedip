@@ -6,8 +6,8 @@ package it.uniurb.beedip.data;
 
 // TODO: mettere la classe insieme a CompassFragment
 public class CompassMeasurement {
-    private int dip; //degree 0-90
-    private int dipDirection; // degree 0-360
+    private int dip = -1; //degree 0-90
+    private int dipDirection = -1; // degree 0-360
     private int younging;
 
     private int isAccurate;
@@ -19,18 +19,18 @@ public class CompassMeasurement {
 
 
     public CompassMeasurement(int dip, int dipDirection, Younging younging, boolean isAccurate) {
-        this.dip = dip;
+        if (dip >= 0 && dip <= 90)
+            this.dip = dip;
+        if (dipDirection >= 0 && dipDirection < 360)
+            this.dipDirection = dipDirection;
         setAccurate(isAccurate);
-        this.dipDirection = dipDirection;
         this.younging = younging.getValue();
-        // TODO vedere se utilizzare i metodi Validate o Precondition;
-        assert dip >= 0 && dip <= 90;
-        assert dipDirection >= 0 && dipDirection < 360;
     }
     public void setAccurate(boolean accurate) {
-        this.isAccurate = 1;
         if (accurate)
             isAccurate = 0;
+        else
+            this.isAccurate = 1;
     }
     public void setRockUnit(String rockUnit) { this.rockUnit = rockUnit; }
     public void setSite(String site) { this.site = site; }
@@ -39,9 +39,7 @@ public class CompassMeasurement {
     public enum Younging {
         UPRIGHT(0), OVERTURNED(1);
         private final int value;
-        private Younging(int value) {
-            this.value = value;
-        }
+        Younging(int value) { this.value = value;}
         public String toString() {
             return String.valueOf(value);
         }
