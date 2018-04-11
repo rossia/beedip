@@ -1214,14 +1214,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         if(cfState) {
             if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                bIndicator.setImageResource(R.drawable.sho);
+                bIndicator.setImageResource(R.drawable.nlong);
             }
             else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 bIndicator.setImageResource(R.drawable.mid);
             }
             else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
                     (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
-                bIndicator.setImageResource(R.drawable.nlong);
+                bIndicator.setImageResource(R.drawable.sho);
             }
             else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                 bIndicator.setImageResource(R.drawable.rlong);
@@ -1256,13 +1256,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         }
         else{
             if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                lIndicator.setImageResource(R.drawable.sho);
+                lIndicator.setImageResource(R.drawable.nlong);
             }
             else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 lIndicator.setImageResource(R.drawable.mid);
             }
             else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
-                lIndicator.setImageResource(R.drawable.nlong);
+                lIndicator.setImageResource(R.drawable.sho);
             }
             else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                 lIndicator.setImageResource(R.drawable.rlong);
