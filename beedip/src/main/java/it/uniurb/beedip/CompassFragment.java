@@ -1,6 +1,5 @@
 package it.uniurb.beedip;
 
-import android.*;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -31,18 +30,16 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import it.uniurb.beedip.data.CompassMeasurement;
@@ -50,6 +47,7 @@ import it.uniurb.beedip.data.GeoPackageDatabases;
 import it.uniurb.beedip.data.OnMeasurementSentListener;
 import android.graphics.Color;
 
+import java.util.LinkedList;
 import java.util.List;
 import mil.nga.geopackage.GeoPackage;
 import mil.nga.geopackage.GeoPackageManager;
@@ -101,15 +99,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     View myView;
     private static SensorManager sensorService;
     private Sensor sensor;
-    //private CompassMeasurement compassMesurement;
-    //private int clickCounter;
-    //private Bussola bussola;
-    //private Inclinometer inclinometro;
-    //private CharSequence choices[];
     private int prevDipangle;
     private boolean msrLock;
     private boolean cfState;
-    //private boolean allowToSave;
     String tmp;
     ImageView lIndicator;
     ImageView bIndicator;
@@ -125,8 +117,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     Button save;
     Button operator;
     Button coordinates;
-    //private double lat;
-    //private double lon;
     LatLng lastPositionAvaiable;
     private CompassMeasurement currentMeasure;
 
@@ -142,9 +132,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private String currentLocation;
     private String currentNotes;
     private String currentType;
+    private String currentSubtype;
+    /*These two are used only for fault as type*/
+    private String currentKindicators;
+    private int currentDisplacement;
+    /*-----------------------------------------*/
     private CompassMeasurement.Younging selectedYounging;
-    // fragment to which measurement data is sent
+    // Fragment to which measurement data is sent
     private OnMeasurementSentListener onMeasurementSentListener;
+    private List<String> faultSubtypes;
 
 
     @Override
@@ -152,24 +148,24 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         super.onCreate(savedInstanceState);
 
         //Variables initialization
-        //clickCounter = 1;
-        //lat = 0.0;
-        //lon = 0.0;
         currentCompass = 0;
         currentDipdirection = 0;
-        //inclinometro = new Inclinometer();
-        //choices = new CharSequence[]{"Bedding", "Cleavage", "Fault"};
-        //currentType = (String) choices[0];
+        currentType = null;
         isAccurate = true;
         msrLock = false;
-        isUpright = false;
+        isUpright = true;
         cfState = true;
         currentLocation = null;
         currentNotes = null;
         currentRockunit = null;
         currentSurveyor = null;
+        currentSubtype = null;
+        currentDisplacement = -1; //Incoherent lenght value when not defined
+        currentKindicators = null;
         selectedYounging = CompassMeasurement.Younging.UPRIGHT;
-        lastPositionAvaiable = new LatLng(43.700180, 12.640637);
+        lastPositionAvaiable = new LatLng(43.70018, 12.64063);
+        features = new LinkedList<>();
+        faultSubtypes = new LinkedList<String>(Arrays.asList("Normal","Reverse","Dextral ss","Sinixtral ss","Not defined"));
         getLocation();
 
 
@@ -196,32 +192,28 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         lIndicator = (ImageView) getView().findViewById(R.id.littleIndicator);
         bIndicator = (ImageView) getView().findViewById(R.id.bigIndicator);
         pLock = (ImageView) getView().findViewById(R.id.padLock);
-        //back = (ImageView) getView().findViewById(R.id.quadrante);
         displayValues = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
         //SensorManager's initialization (It allow to declare sensor variables)
         sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-        //Initialization of useful sensors
-        sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION); //---------------------------- change, is deprecated!
         sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
         //Buttons init
         bigClockFace = (ImageButton) getView().findViewById(R.id.bigClockface);
         littleClockFace = (ImageButton) getView().findViewById(R.id.littleClockface);
         rockUnit = (Button) getView().findViewById(R.id.rockUnit);
         locality = (Button) getView().findViewById(R.id.locality);
-        //type = (Spinner) getView().findViewById(R.id.fragment_compass_layer_spinner);
         type = (Button) getView().findViewById(R.id.type);
         operator = (Button) getView().findViewById(R.id.surveyor);
         accuracy = (Button) getView().findViewById(R.id.accuracy);
         note = (Button) getView().findViewById(R.id.note);
         save = (Button) getView().findViewById(R.id.save);
         coordinates = (Button) getView().findViewById(R.id.coordinates);
-        //Setting initial background color of buttons
-        //accuracy.setBackgroundColor(Color.GREEN);
-        //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-        //accuracy.setBackgroundResource(R.drawable.accuracy_green);
         this.getLocation();
-        coordinates.setText(lastPositionAvaiable.latitude+" / "+lastPositionAvaiable.longitude);
+        String initialCoordinates = lastPositionAvaiable.latitude+" / "+lastPositionAvaiable.longitude;
+        coordinates.setText(initialCoordinates);
         pLock.setVisibility(View.GONE);
+
+        /*-------------------------------------------SAVE BUTTON---------------------------------------------------------------------------------------------*/
         save.setBackgroundResource(R.drawable.save_shape_red);
         save.setTextColor(Color.parseColor("#e11919"));
         save.setOnClickListener(new View.OnClickListener() {
@@ -255,6 +247,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     save.setBackgroundResource(R.drawable.save_shape_green);
                     save.setTextColor(Color.parseColor("#32ae16"));
                     resetParameters();
+
+                    save.setEnabled(false);
                 }
                 else {
                     featureTableToast = Toast.makeText(getActivity(),
@@ -267,6 +261,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         save.setEnabled(false);
         save.setText("");
 
+
+        /*-------------------------------------------COORDINATES BUTTON---------------------------------------------------------------------------------------------*/
         coordinates.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -277,7 +273,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
 
 
-        //Button relative to the little clock face
+        /*-------------------------------------------LITTLE CLOCK FACE BUTTON---------------------------------------------------------------------------------------------*/
         littleClockFace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -300,7 +296,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             }
 
         });
-        //Creation of clock face's buttons
+        /*-------------------------------------------BIG CLOCK FACE BUTTON---------------------------------------------------------------------------------------------*/
         //By simple click on button
         bigClockFace.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -309,13 +305,39 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                if (currentMeasure == null) {
                    currentMeasure = new CompassMeasurement(currentInlcination, currentDipdirection, selectedYounging, isAccurate);
                    pLock.setVisibility(View.VISIBLE);
-                   save.setBackgroundResource(R.drawable.save_shape_blue);
-                   save.setTextColor(Color.parseColor("#00d2ff"));
+                   //Changes color to save button only if a project is selected
+                   if(!features.isEmpty()) {
+                       save.setBackgroundResource(R.drawable.save_shape_blue);
+                       save.setTextColor(Color.parseColor("#00d2ff"));
+                       //Switch to engage alertdialog to gain subtype on lock
+                       for(int i = 0; i < features.size(); i++) {
+                           if (features.get(i).equals(currentType)) {
+                               switch (i) {
+                                   //case 0 do not need subtype
+                                   case 1:
+                                       getTextSubtype();
+                                       break;
+                                   //case 2 do not need subtype
+                                   case 3:
+                                       getListSubtype();
+                                       //getDisplacement(); ---> Do Not Work
+                                       break;
+                                   case 4:
+                                       getTextSubtype();
+                                       break;
+                               }
+                           }
+                       }
+                   }
                } else {
                    currentMeasure = null;
                    pLock.setVisibility(View.GONE);
                    save.setBackgroundResource(R.drawable.save_shape_red);
                    save.setTextColor(Color.parseColor("#e11919"));
+                   //If list is not empty, so a project is selected
+                   //Enables save
+                   if(!features.isEmpty())
+                       save.setEnabled(true);
                }
                 if (!isUpright) {
                     selectedYounging = CompassMeasurement.Younging.OVERTURNED;
@@ -330,19 +352,19 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public boolean onLongClick(View v) {
                 //Switch from isUpright indicator to normal and viceversa
-                isUpright = !isUpright;
+                //Only if currentType = "bedding"
+                if(features.get(0).equals(currentType))
+                    isUpright = !isUpright;
                 return true;
             }
         });
 
-        //Rock Unit button
+        /*-------------------------------------------ROCK UNIT BUTTON---------------------------------------------------------------------------------------------*/
         rockUnit.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //alertDialog.setTitle("Rock Unit");
-                //alertDialog.setMessage("Write a rock unit");
 
                 View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_r, null);
 
@@ -378,23 +400,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 );
                 // Set the alert dialog message using spannable string builder
                 alertDialog.setMessage(ssBuildermessage);
-
-
-
-                /*final EditText input = new EditText(getActivity());
-                //final EditText input = (EditText) getActivity().findViewById(R.id.prova);
-                //final TextView input = (TextView) customStyle.findViewById(R.id.prova);
-                input.setTextColor(Color.parseColor("#f2de00"));
-                //input.setHighlightColor(Color.parseColor("#f2de00"));
-                if (currentRockunit != null) {
-                    input.setText(currentRockunit);
-                    input.setSelectAllOnFocus(true);
-                }
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT);
-                input.setLayoutParams(lp);
-                alertDialog.setView(input);*/
 
                 final TextView input = (TextView) customStyle.findViewById(R.id.etext_r);
                 if (currentRockunit != null) {
@@ -438,14 +443,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Surveyor button
+        /*-------------------------------------------SURVEYOR BUTTON---------------------------------------------------------------------------------------------*/
         operator.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //alertDialog.setTitle("Surveyor");
-                //alertDialog.setMessage("Write the Surveyor's name");
 
                 View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
 
@@ -481,19 +484,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 // Set the alert dialog message using spannable string builder
                 alertDialog.setMessage(ssBuildermessage);
 
-
-                /*final EditText input = new EditText(getActivity());
-                input.setTextColor(Color.parseColor("#f2de00"));
-                if (currentSurveyor != null) {
-                    input.setText(currentSurveyor);
-                    input.setSelectAllOnFocus(true);
-                }
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT);
-                input.setLayoutParams(lp);
-                alertDialog.setView(input);*/
-
                 final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
                 if (currentSurveyor != null) {
                     input.setText(currentSurveyor);
@@ -524,14 +514,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                //alertDialog.show();
-
-
-
-
-
-
-
 
                 AlertDialog dialog = alertDialog.create();
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
@@ -541,14 +523,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Locality button
+        /*-------------------------------------------LOCALITY BUTTON---------------------------------------------------------------------------------------------*/
         locality.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //alertDialog.setTitle("Location");
-                //alertDialog.setMessage("Write the Location.");
 
                 View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_l, null);
 
@@ -584,19 +564,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 // Set the alert dialog message using spannable string builder
                 alertDialog.setMessage(ssBuildermessage);
 
-                /*final EditText input = new EditText(getActivity());
-                input.setTextColor(Color.parseColor("#f2de00"));
-                if (currentLocation != null) {
-                    input.setText(currentLocation);
-                    input.setSelectAllOnFocus(true);
-                }
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT);
-                input.setLayoutParams(lp);
-                alertDialog.setView(input);*/
-                //Do you want to set an icon?
-                //alertDialog.setIcon(R.drawable.ICON_ID);
+                /*Do you want to set an icon?
+                alertDialog.setIcon(R.drawable.ICON_ID);*/
 
                 final TextView input = (TextView) customStyle.findViewById(R.id.etext_l);
                 if (currentLocation != null) {
@@ -627,7 +596,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                                 dialog.cancel();
                             }
                         });
-                //alertDialog.show();
+
                 AlertDialog dialog = alertDialog.create();
                 dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
                 dialog.setView(customStyle);
@@ -636,7 +605,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Type button
+        /*-------------------------------------------TYPE BUTTON---------------------------------------------------------------------------------------------*/
         type.setText(currentType);
         type.setOnClickListener(new View.OnClickListener() {
 
@@ -644,7 +613,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             public void onClick(View arg0) {
                 //Printing popup menu
                 AlertDialog.Builder dialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-                //dialog.setTitle("Pick a type");
 
                 //CHANGING ALERT DIALOG TITLE'S COLOR
                 // Specify the alert dialog title
@@ -670,7 +638,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     @Override
                     public void onClick(DialogInterface dialog, int selected) {
                         editFeaturesTable = featuresAdapter.getItem(selected);
-                        currentType = (String) editFeaturesTable;
+                        currentType = editFeaturesTable;
                         type.setText(currentType);
                         dialog.dismiss();
                     }
@@ -679,7 +647,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Accuracy button
+        /*-------------------------------------------ACCURACY BUTTON---------------------------------------------------------------------------------------------*/
         accuracy.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -687,15 +655,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 isAccurate = !isAccurate;
                 //Changing button color
                 if (!isAccurate) {
-                    //accuracy.setBackgroundColor(Color.RED);
-                    //accuracy.setBackgroundColor(Color.parseColor("#e11919"));
-                    //accuracy.setBackgroundResource(R.drawable.accuracy_red);
+                    //If it's not accurate then the text will be red
                     accuracy.setTextColor(Color.parseColor("#e11919"));
                 }
                 else{
-                    //accuracy.setBackgroundColor(Color.GREEN);
-                    //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-                    //accuracy.setBackgroundResource(R.drawable.accuracy_green);
+                    //if it's accurate then the text will be green
                     accuracy.setTextColor(Color.parseColor("#32ae16"));
                 }
                 if (currentMeasure != null) {
@@ -706,7 +670,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         });
 
-        //Note button
+        /*-------------------------------------------NOTE BUTTON---------------------------------------------------------------------------------------------*/
         note.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -788,7 +752,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-
         // This makes sure that the container activity has implemented
         // the callback interface. If not, it throws an exception
         try {
@@ -801,244 +764,42 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        //TO END TO DEFINE
-        int degree;
         if (currentMeasure == null) {
-            //COMPASS
-            //Compass animation
-            //Acquiring values
-            degree = Math.round(sensorEvent.values[0]);
-            RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_comp.setDuration(4000);
-            ra_comp.setFillAfter(true);
-            ra_comp.setRepeatCount(Animation.INFINITE);
-            currentCompass = degree;
-
-            if (cfState) {
-                lIndicator.setAnimation(ra_comp);
-                lIndicator.startAnimation(ra_comp);
-            } else {
-                bIndicator.setAnimation(ra_comp);
-                bIndicator.startAnimation(ra_comp);
-                //Compass text-printed values
-                displayValues.setText(degree + "°");
-            }
-
-            //CLINOMETER
-            //Clinometer animation
-            //Acquiring values
-            boolean upsideDown = false;
-            boolean avoidAnimation = false;
-            //int usOffset;
-            int x = Math.round(sensorEvent.values[0]);
-            int y = Math.round(sensorEvent.values[1]);
-            int z = Math.round(sensorEvent.values[2]);
-            //Offsetting y axis
-            if (y == 0) {
-                //nothing
-            } else if ((y > 90) && (y < 179)) {
-                y = 90 - (y - 90);
-            } else if ((y == 180) || (y == -180)) {
-                y = 0;
-            } else if ((y < -90) && (y > -179)) {
-                y = -(90 + (y + 90));
-            }
-            //double y1 = sensorEvent.values[1];
-            double y1 = (double) y;
-            double z1 = sensorEvent.values[2];
-            double posy,
-                    posz,
-                    ypar,
-                    zpar,
-                    res,
-                    dipDouble;
-            int dipAngle,
-                    distance,
-                    toDisplay;
-
-            posy = Math.abs(y1);
-            posz = Math.abs(z1);
-            //Converting posy and posz from degrees to radians
-            posy = posy * Math.PI / 180;
-            posz = posz * Math.PI / 180;
-            ypar = Math.sin(posy);
-            zpar = Math.sin(posz);
-            //Finding the resultant vector
-            res = Math.sqrt(Math.pow(ypar, 2.0) + Math.pow(zpar, 2.0));
-            //Angle in degrees
-            dipDouble = (Math.asin(ypar / res) * 180 / Math.PI);
-            dipAngle = (int) dipDouble;
-            //Getting the offset to have the real angle
-            if ((y > 0) && (z > 0)) {
-                //I
-                dipAngle = 90 - dipAngle;
-            } else if ((y > 0) && (z < 0)) {
-                //IV
-                dipAngle = dipAngle + 270;
-            } else if ((y < 0) && (z > 0)) {
-                //II
-                dipAngle = dipAngle + 90;
-            } else if ((y < 0) && (z < 0)) {
-                //III
-                dipAngle = 90 - dipAngle + 180;
-            }else if ((y == 0) && (z > 0)) {
-                dipAngle = 90;
-            } else if ((y == 0) && (z < 0)) {
-                dipAngle = 270;
-            } else if ((y > 0) && (z == 0)) {
-                dipAngle = 0;
-            } else if ((y < 0) && (z == 0)) {
-                dipAngle = 180;
-            } else if ((y == 0) && (z == 0)) {
-                dipAngle = 0;
-            }
-
-            //Finding out if phone is upside down and telling related values
-            if((Math.abs(Math.round(sensorEvent.values[1])) > 90)){
-                upsideDown = true;
-                dipAngle = dipAngle + 180;
-                if(dipAngle >= 360)
-                    dipAngle = dipAngle - 360;
-
-            }
-
-            distance = dipAngle - x;
-            //dipAngle = direction of the phone's inclination
-            //Distance dipDirection
-            if (distance <= 0)
-                distance = 360 - x + dipAngle;
-            distance = Math.abs(360 - distance);
-
-
-            //Calculating inclination to display
-            toDisplay = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(y1)), 2.0) +Math.pow(Math.sin(Math.toRadians(z1)), 2.0)))));
-            if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
-                toDisplay = 90;
-
-            //Offsetting dipAngle for animation
-            dipAngle = dipAngle + 180;
-            if(dipAngle >= 360)
-                dipAngle = dipAngle - 360;
-            if((dipAngle > 0) && (dipAngle <= 180)) {
-                //dipAngle = dipAngle + 180;
-                dipAngle = 180 - dipAngle;
-                dipAngle = 180 + dipAngle;
-            }
-            else if((dipAngle > 180) && (dipAngle < 360)) {
-                //dipAngle = dipAngle - 180;
-                dipAngle = dipAngle - 180;
-                dipAngle = 180 - dipAngle;
-            }
-
-            if(upsideDown) {
-                dipAngle = dipAngle + 180;
-                if(dipAngle >= 360)
-                    dipAngle = dipAngle - 360;
-            }
-
-            /*This fixes the blink in the animation from 359 to 1 and from 1 to 359
-            if((prevDipangle > 350) && (dipAngle < 10))
-                prevDipangle = 1;
-            else if((prevDipangle < 10) && (dipAngle > 350))
-                prevDipangle = 359;*/
-
-
-            RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
-                    0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-            ra_clino.setDuration(4000);
-            ra_clino.setFillAfter(true);
-            ra_clino.setRepeatCount(Animation.INFINITE);
-            /*if(upsideDown){
-                dipAngle = dipAngle - 180;
-                if(dipAngle < 0)
-                    dipAngle = 360 + dipAngle;
-            }*/
-            prevDipangle = dipAngle;
-            currentDipdirection = distance;
-            currentInlcination = toDisplay;
-            //displayValues.setText(currentInlcination + "/" + currentDipdirection);
-
-            if(cfState) {
-                if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    bIndicator.setImageResource(R.drawable.sho);
+            if(!features.isEmpty()) {
+                //Do something while feature list is not empty
+                for(int i = 0; i < features.size(); i++){
+                    if(features.get(i).equals(currentType)){
+                        //Choosing the right behavior
+                        switch (i){
+                            case 0:
+                                this.compassCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
+                                break;
+                            case 1:
+                                this.compassCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
+                                break;
+                            case 2:
+                                this.compassCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
+                                break;
+                            case 3:
+                                this.compassCalculation(sensorEvent);
+                                this.planeCalculation(sensorEvent);
+                                break;
+                            case 4:
+                                this.compassCalculation(sensorEvent);
+                                this.lineCalculation(sensorEvent);
+                                break;
+                        }
+                    }
                 }
-                else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    bIndicator.setImageResource(R.drawable.mid);
-                }
-                else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
-                        (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
-                    bIndicator.setImageResource(R.drawable.nlong);
-                }
-                else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    bIndicator.setImageResource(R.drawable.rlong);
-                }
-                else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    bIndicator.setImageResource(R.drawable.rmid);
-                }
-                else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
-                    bIndicator.setImageResource(R.drawable.rsho);
-                }
-                else if((currentInlcination <= 3) && (currentInlcination >= 0)){
-                    bIndicator.setImageResource(R.drawable.cross);
-                    bIndicator.clearAnimation();
-                    currentDipdirection = 0;
-                    avoidAnimation = true;
-                }
-                else if(currentInlcination == 90){
-                    bIndicator.setImageResource(R.drawable.point);
-                }
-                bIndicator.getLayoutParams().width = 150;
-                bIndicator.getLayoutParams().height = 150;
-                bIndicator.requestLayout();
-
-                if(avoidAnimation != true) {
-                    bIndicator.setAnimation(ra_clino);
-                    bIndicator.startAnimation(ra_clino);
-                }
-
-                //Clino text-printed values
-                displayValues.setText(currentInlcination + "/" + currentDipdirection); //CAMBIARE ASSOLUTAMENTE
-                //sendMeasurementData(compassMesurement);
             }
             else{
-                if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    lIndicator.setImageResource(R.drawable.sho);
-                }
-                else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    lIndicator.setImageResource(R.drawable.mid);
-                }
-                else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
-                    lIndicator.setImageResource(R.drawable.nlong);
-                }
-                else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
-                    lIndicator.setImageResource(R.drawable.rlong);
-                }
-                else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
-                    lIndicator.setImageResource(R.drawable.rmid);
-                }
-                else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
-                    lIndicator.setImageResource(R.drawable.rsho);
-                }
-                else if((currentInlcination <= 3) && (currentInlcination >= 0)){
-                    lIndicator.setImageResource(R.drawable.cross);
-                    lIndicator.clearAnimation();
-                    avoidAnimation = true;
-                }
-                else if(currentInlcination == 90){
-                    lIndicator.setImageResource(R.drawable.point);
-
-                }
-                lIndicator.getLayoutParams().width = 35;
-                lIndicator.getLayoutParams().height = 35;
-                lIndicator.requestLayout();
-
-                if(avoidAnimation != true) {
-                    lIndicator.setAnimation(ra_clino);
-                    lIndicator.startAnimation(ra_clino);
-                }
-                //Clino text-printed values
-                //displayValues.setText( y + "/" + dipAngle);
-                //sendMeasurementData(compassMesurement);
+                //Do something when feature list is empty
+                //Bedding as default? (Dunno!)
+                this.compassCalculation(sensorEvent);
+                this.planeCalculation(sensorEvent);
             }
         }
     }
@@ -1155,14 +916,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private void resetParameters() {
         currentNotes = null;
         note.setTextColor(Color.parseColor("#f2de00"));
-        //currentType = (String) choices[0];
-        //type.setText(currentType);
         currentRockunit = null;
         rockUnit.setTextColor(Color.parseColor("#f2de00"));
         isAccurate = true;
-        //accuracy.setBackgroundColor(Color.parseColor("#32ae16"));
-        //accuracy.setBackgroundResource(R.drawable.accuracy_green);
         accuracy.setTextColor(Color.parseColor("#32ae16"));
+        currentSubtype = null;
+        currentDisplacement = -1; //Incoherent lenght value when not defined
+        currentKindicators = null;
     }
 
     private void getLocation(){
@@ -1184,51 +944,58 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             // for ActivityCompat#requestPermissions for more details.
         }
         //Getting coarse position.
-        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new android.location.LocationListener(){
-            @Override
-            public void onLocationChanged(Location location) {
-                lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
-                coordinates.setText(location.getLatitude()+" / "+location.getLongitude());
-            }
+        try {
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new android.location.LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    lastPositionAvaiable = new LatLng(location.getLatitude(), location.getLongitude());
+                    String position = location.getLatitude() + " / " + location.getLongitude();
+                    coordinates.setText(position);
+                }
 
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
 
-            }
+                }
 
-            @Override
-            public void onProviderEnabled(String provider) {
+                @Override
+                public void onProviderEnabled(String provider) {
 
-            }
+                }
 
-            @Override
-            public void onProviderDisabled(String provider) {
+                @Override
+                public void onProviderDisabled(String provider) {
 
-            }
-        });
-        //If able to, overwriting coarse position with finer one.
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 60, 2, new android.location.LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                lastPositionAvaiable = new LatLng(location.getLatitude(),location.getLongitude());
-                coordinates.setText(location.getLatitude()+" / "+location.getLongitude());
-            }
+                }
+            });
+            //If able to, overwriting coarse position with finer one.
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 60, 2, new android.location.LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    lastPositionAvaiable = new LatLng(location.getLatitude(), location.getLongitude());
+                    String position = location.getLatitude() + " / " + location.getLongitude();
+                    coordinates.setText(position);
+                }
 
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
 
-            }
+                }
 
-            @Override
-            public void onProviderEnabled(String provider) {
+                @Override
+                public void onProviderEnabled(String provider) {
 
-            }
+                }
 
-            @Override
-            public void onProviderDisabled(String provider) {
+                @Override
+                public void onProviderDisabled(String provider) {
 
-            }
-        });
+                }
+            });
+        }
+        catch(NullPointerException e){
+            System.out.println(e);
+        }
     }
 
     public void turnOnGPS(){
@@ -1303,6 +1070,519 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             featureTableToast.show();
         }
         /*-------------------------------------------------------------------------------------------------------------*/
+    }
+
+    public void compassCalculation(SensorEvent sensorEvent){
+        //COMPASS
+        //Compass animation
+        //Acquiring values
+        String toShow;
+        int degree;
+        degree = Math.round(sensorEvent.values[0]);
+        RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        ra_comp.setDuration(4000);
+        ra_comp.setFillAfter(true);
+        ra_comp.setRepeatCount(Animation.INFINITE);
+        currentCompass = degree;
+        if (cfState) {
+            lIndicator.setAnimation(ra_comp);
+            lIndicator.startAnimation(ra_comp);
+        } else {
+            bIndicator.setAnimation(ra_comp);
+            bIndicator.startAnimation(ra_comp);
+            //Compass text-printed values
+            toShow = degree + "°";
+            displayValues.setText(toShow);
+        }
+    }
+
+    public void planeCalculation(SensorEvent sensorEvent){
+        //INCLINOMETER
+        //Acquiring values
+        String toShow;
+        boolean upsideDown = false;
+        boolean avoidAnimation = false;
+        //int usOffset;
+        int x = Math.round(sensorEvent.values[0]);
+        int y = Math.round(sensorEvent.values[1]);
+        int z = Math.round(sensorEvent.values[2]);
+        //Offsetting y axis
+        if (y == 0) {
+            //nothing
+        } else if ((y > 90) && (y < 179)) {
+            y = 90 - (y - 90);
+        } else if ((y == 180) || (y == -180)) {
+            y = 0;
+        } else if ((y < -90) && (y > -179)) {
+            y = -(90 + (y + 90));
+        }
+        double y1 = (double) y;
+        double z1 = sensorEvent.values[2];
+        double posy,
+                posz,
+                ypar,
+                zpar,
+                res,
+                dipDouble;
+        int dipAngle,
+                distance,
+                toDisplay;
+
+        posy = Math.abs(y1);
+        posz = Math.abs(z1);
+        //Converting posy and posz from degrees to radians
+        posy = posy * Math.PI / 180;
+        posz = posz * Math.PI / 180;
+        ypar = Math.sin(posy);
+        zpar = Math.sin(posz);
+        //Finding the resultant vector
+        res = Math.sqrt(Math.pow(ypar, 2.0) + Math.pow(zpar, 2.0));
+        //Angle in degrees
+        dipDouble = (Math.asin(ypar / res) * 180 / Math.PI);
+        dipAngle = (int) dipDouble;
+        //Getting the offset to have the real angle
+        if ((y > 0) && (z > 0)) {
+            //I
+            dipAngle = 90 - dipAngle;
+        } else if ((y > 0) && (z < 0)) {
+            //IV
+            dipAngle = dipAngle + 270;
+        } else if ((y < 0) && (z > 0)) {
+            //II
+            dipAngle = dipAngle + 90;
+        } else if ((y < 0) && (z < 0)) {
+            //III
+            dipAngle = 90 - dipAngle + 180;
+        }else if ((y == 0) && (z > 0)) {
+            dipAngle = 90;
+        } else if ((y == 0) && (z < 0)) {
+            dipAngle = 270;
+        } else if ((y > 0) && (z == 0)) {
+            dipAngle = 0;
+        } else if ((y < 0) && (z == 0)) {
+            dipAngle = 180;
+        } else if ((y == 0) && (z == 0)) {
+            dipAngle = 0;
+        }
+
+        //Finding out if phone is upside down and telling related values
+        if((Math.abs(Math.round(sensorEvent.values[1])) > 90)){
+            upsideDown = true;
+            dipAngle = dipAngle + 180;
+            if(dipAngle >= 360)
+                dipAngle = dipAngle - 360;
+
+        }
+
+        distance = dipAngle - x;
+        //dipAngle = direction of the phone's inclination
+        //Distance dipDirection
+        if (distance <= 0)
+            distance = 360 - x + dipAngle;
+        distance = Math.abs(360 - distance);
+
+
+        //Calculating inclination to display
+        toDisplay = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(y1)), 2.0) +Math.pow(Math.sin(Math.toRadians(z1)), 2.0)))));
+        if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
+            toDisplay = 90;
+
+        //Offsetting dipAngle for animation
+        dipAngle = dipAngle + 180;
+        if(dipAngle >= 360)
+            dipAngle = dipAngle - 360;
+        if((dipAngle > 0) && (dipAngle <= 180)) {
+            dipAngle = 180 - dipAngle;
+            dipAngle = 180 + dipAngle;
+        }
+        else if((dipAngle > 180) && (dipAngle < 360)) {
+            dipAngle = dipAngle - 180;
+            dipAngle = 180 - dipAngle;
+        }
+
+        if(upsideDown) {
+            dipAngle = dipAngle + 180;
+            if(dipAngle >= 360)
+                dipAngle = dipAngle - 360;
+        }
+
+        RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
+                0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        ra_clino.setDuration(4000);
+        ra_clino.setFillAfter(true);
+        ra_clino.setRepeatCount(Animation.INFINITE);
+        prevDipangle = dipAngle;
+        currentDipdirection = distance;
+        currentInlcination = toDisplay;
+
+        if(cfState) {
+            if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                bIndicator.setImageResource(R.drawable.nlong);
+            }
+            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                bIndicator.setImageResource(R.drawable.mid);
+            }
+            else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
+                    (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
+                bIndicator.setImageResource(R.drawable.sho);
+            }
+            else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                bIndicator.setImageResource(R.drawable.rlong);
+            }
+            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                bIndicator.setImageResource(R.drawable.rmid);
+            }
+            else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+                bIndicator.setImageResource(R.drawable.rsho);
+            }
+            else if((currentInlcination <= 3) && (currentInlcination >= 0)){
+                bIndicator.setImageResource(R.drawable.cross);
+                bIndicator.clearAnimation();
+                currentDipdirection = 0;
+                avoidAnimation = true;
+            }
+            else if(currentInlcination == 90){
+                bIndicator.setImageResource(R.drawable.point);
+            }
+            bIndicator.getLayoutParams().width = 150;
+            bIndicator.getLayoutParams().height = 150;
+            bIndicator.requestLayout();
+
+            if(!avoidAnimation) {
+                bIndicator.setAnimation(ra_clino);
+                bIndicator.startAnimation(ra_clino);
+            }
+            //Clino text-printed values
+            toShow = currentInlcination+"/"+currentDipdirection;
+            displayValues.setText(toShow);
+            //sendMeasurementData(compassMesurement);
+        }
+        else{
+            if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                lIndicator.setImageResource(R.drawable.nlong);
+            }
+            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                lIndicator.setImageResource(R.drawable.mid);
+            }
+            else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+                lIndicator.setImageResource(R.drawable.sho);
+            }
+            else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+                lIndicator.setImageResource(R.drawable.rlong);
+            }
+            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+                lIndicator.setImageResource(R.drawable.rmid);
+            }
+            else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+                lIndicator.setImageResource(R.drawable.rsho);
+            }
+            else if((currentInlcination <= 3) && (currentInlcination >= 0)){
+                lIndicator.setImageResource(R.drawable.cross);
+                lIndicator.clearAnimation();
+                avoidAnimation = true;
+            }
+            else if(currentInlcination == 90){
+                lIndicator.setImageResource(R.drawable.point);
+
+            }
+            lIndicator.getLayoutParams().width = 35;
+            lIndicator.getLayoutParams().height = 35;
+            lIndicator.requestLayout();
+
+            if(!avoidAnimation) {
+                lIndicator.setAnimation(ra_clino);
+                lIndicator.startAnimation(ra_clino);
+            }
+        }
+    }
+
+    private void lineCalculation(SensorEvent sensorEvent) {
+        //Calculate values and change images
+        String toShow;
+        if(cfState) {
+            currentDipdirection = Math.round(sensorEvent.values[0]);
+            currentInlcination = Math.round(sensorEvent.values[1]);
+
+            if(currentInlcination <= 90 && currentInlcination >= 0){
+                //Nothing
+            }
+            else if(((currentInlcination < 180) && (currentInlcination > 90)) || (Math.abs(currentInlcination) == 180)) {
+                currentInlcination = Math.abs(Math.abs(currentInlcination) - 180);
+                currentDipdirection += 180;
+                if(currentDipdirection > 360){
+                    currentDipdirection -= 360;
+                }
+            }
+            else if((currentInlcination > -180) && (currentInlcination <= -90)) {
+                currentInlcination = Math.abs(currentInlcination + 180);
+            }
+            else if((currentInlcination > -90) && (currentInlcination < 0)) {
+                currentInlcination = Math.abs(currentInlcination);
+                currentDipdirection += 180;
+                if(currentDipdirection > 360){
+                    currentDipdirection -= 360;
+                }
+            }
+            toShow = currentInlcination + "/" + currentDipdirection;
+            displayValues.setText(toShow);
+        }
+            //Need to implement the part for the graphic response
+    }
+
+    /*-----------------FUNCTION TO ACQUIRE DATA ON BIG CLOCK FACE LOCK-------------------------------------------------------------------------------------------------------*/
+
+    private void getTextSubtype(){
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
+        //CHAGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Type";
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        alertDialog.setTitle(ssBuilder);
+
+        //CHANGING ALERT DIALOG MESSAGE'S COLOR
+        // Specify the alert dialog message
+        String messageText = "Define the "+currentType+" type.";
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+        // Apply the text color span
+        ssBuildermessage.setSpan(
+                foregroundColorSpan,
+                0,
+                messageText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog message using spannable string builder
+        alertDialog.setMessage(ssBuildermessage);
+
+        final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
+        if (currentSubtype != null) {
+            input.setText(currentSubtype);
+            input.setSelectAllOnFocus(true);
+        }
+
+        input.setHighlightColor(Color.parseColor("#4d4d4d"));
+
+        alertDialog.setPositiveButton("Set",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        tmp = input.getText().toString();
+                        if (!tmp.equals("")) {
+                            currentSubtype = tmp;
+                        }
+                        else {
+                            currentSubtype = null;
+                        }
+
+                    }
+                });
+
+        alertDialog.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+        AlertDialog dialog = alertDialog.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        dialog.setView(customStyle);
+        dialog.show();
+    }
+
+    private void getListSubtype(){
+        //Printing popup menu
+        AlertDialog.Builder dialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+
+        //CHANGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Choose a type of "+ currentType;
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        dialog.setTitle(ssBuilder);
+
+
+        final ArrayAdapter<String> featuresAdapter = new ArrayAdapter<String>(
+                getActivity(), android.R.layout.simple_spinner_item, faultSubtypes);
+        dialog.setAdapter(featuresAdapter, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int selected) {
+                //editFeaturesTable = featuresAdapter.getItem(selected);
+                //currentType = editFeaturesTable;
+                if(selected < (faultSubtypes.size() - 1)) //"Not defined" it has to be last element
+                    currentSubtype = faultSubtypes.get(selected);
+                else
+                    currentSubtype = null;
+                dialog.dismiss();
+                getDisplacement();
+                //getKindicators();
+            }
+        }).create().show();
+    }
+
+    private void getDisplacement(){
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_int, null);
+        //CHAGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Displacement";
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        alertDialog.setTitle(ssBuilder);
+
+        //CHANGING ALERT DIALOG MESSAGE'S COLOR
+        // Specify the alert dialog message
+        String messageText = "Define the displacement.";
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+        // Apply the text color span
+        ssBuildermessage.setSpan(
+                foregroundColorSpan,
+                0,
+                messageText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog message using spannable string builder
+        alertDialog.setMessage(ssBuildermessage);
+
+        final TextView input = (TextView) customStyle.findViewById(R.id.etext_int);
+        if (currentDisplacement >= 0) {
+            input.setText(String.valueOf(currentDisplacement));
+            input.setSelectAllOnFocus(true);
+        }
+
+        input.setHighlightColor(Color.parseColor("#4d4d4d"));
+
+        alertDialog.setPositiveButton("Set",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        tmp = input.getText().toString();
+                        if (!tmp.equals("")) {
+                            currentDisplacement = Integer.parseInt(tmp);
+                        }
+                        else {
+                            currentDisplacement = -1;
+                        }
+                        getKindicators();
+
+                    }
+                });
+
+        alertDialog.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        getKindicators();
+                    }
+                });
+
+        AlertDialog dialog = alertDialog.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        dialog.setView(customStyle);
+        dialog.show();
+    }
+
+    private void getKindicators(){
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
+        View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
+        //CHAGING ALERT DIALOG TITLE'S COLOR
+        // Specify the alert dialog title
+        String titleText = "Kinematics indicators";
+        // Initialize a new foreground color span instance
+        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.parseColor("#f2de00"));
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(titleText);
+        // Apply the text color span
+        ssBuilder.setSpan(
+                foregroundColorSpan,
+                0,
+                titleText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog title using spannable string builder
+        alertDialog.setTitle(ssBuilder);
+
+        //CHANGING ALERT DIALOG MESSAGE'S COLOR
+        // Specify the alert dialog message
+        String messageText = "Define the kinematics indicators.";
+        // Initialize a new spannable string builder instance
+        SpannableStringBuilder ssBuildermessage = new SpannableStringBuilder(messageText);
+        // Apply the text color span
+        ssBuildermessage.setSpan(
+                foregroundColorSpan,
+                0,
+                messageText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        // Set the alert dialog message using spannable string builder
+        alertDialog.setMessage(ssBuildermessage);
+
+        final TextView input = (TextView) customStyle.findViewById(R.id.etext_s);
+        if (currentKindicators != null) {
+            input.setText(currentKindicators);
+            input.setSelectAllOnFocus(true);
+        }
+
+        input.setHighlightColor(Color.parseColor("#4d4d4d"));
+
+        alertDialog.setPositiveButton("Set",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        tmp = input.getText().toString();
+                        if (!tmp.equals("")) {
+                            currentKindicators = tmp;
+                        }
+                        else {
+                            currentKindicators = null;
+                        }
+
+                    }
+                });
+
+        alertDialog.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+        AlertDialog dialog = alertDialog.create();
+
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        dialog.setView(customStyle);
+        dialog.show();
     }
 }
 
