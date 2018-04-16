@@ -1,5 +1,7 @@
 package it.uniurb.beedip.data;
 
+import android.support.annotation.NonNull;
+
 /**
  * Created by rossia on 11/24/2017.
  */
@@ -46,6 +48,46 @@ public class CompassMeasurement {
         public int getValue() {
             return value;
         }
+    }
+    public enum SurfaceType {
+        BEDDING(0), CLEAVAGE(1), JOINT(2), FAULT(3), LINEATION(4);
+        private final int value;
+        SurfaceType(int value) { this.value = value;}
+        public String toString() {
+            String s = "";
+            switch (value) {
+                case 0:
+                    s = "bedding";
+                    break;
+                case 1:
+                    s = "cleavage";
+                    break;
+                case 2:
+                    s = "joint";
+                    break;
+                case 3:
+                    s = "fault";
+                    break;
+                case 4:
+                    s = "lineation";
+                    break;
+            }
+            return s;
+        }
+    }
+    public enum FaultType {
+        NORMAL(0), REVERSE(1), Dextral_SS(2), SINIXTRAL_SS(3), UNDEFINED(4);
+        private final int value;
+        private static final int size = FaultType.values().length;
+        FaultType(int value) { this.value = value;}
+        @NonNull
+        public String toString() {
+            return String.valueOf(value);
+        }
+        public int getValue() {
+            return value;
+        }
+        public static int size() {return size;}
     }
     public int getDip() {
         return dip;

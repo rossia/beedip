@@ -427,11 +427,6 @@ public class GeoPackageMapFragment extends Fragment implements
     private List<FeatureOverlayQuery> featureOverlayQueries = new ArrayList<>();
 
     /**
-     * Compass Measurement
-     */
-    private CompassMeasurement compassMeasurement = null;
-
-    /**
      * Constructor
      */
     public GeoPackageMapFragment() {
@@ -925,14 +920,6 @@ public class GeoPackageMapFragment extends Fragment implements
                                 .toPoint(pointMarker.getPosition());
                         FeatureRow newPoint = featureDao.newRow();
                         DataColumnsDao dataColumnsDao = geoPackage.getDataColumnsDao();
-                        if (compassMeasurement != null)
-                        {
-                            Integer immersionVal = new Integer(compassMeasurement.getDip());
-                            Integer inclinazioVal = new Integer(compassMeasurement.getDipDirection());
-                            newPoint.setValue(dip_field_name,immersionVal);
-                            newPoint.setValue("dip_direction_field_name",inclinazioVal);
-                        }
-
                         GeoPackageGeometryData pointGeomData = new GeoPackageGeometryData(
                                 srsId);
                         pointGeomData.setGeometry(point);
@@ -4017,8 +4004,4 @@ public class GeoPackageMapFragment extends Fragment implements
 
         return databases;
     }
-    public void setMeasurement(CompassMeasurement measurement) {
-        compassMeasurement = measurement;
-    };
-
 }

@@ -3165,27 +3165,12 @@ public class GeoPackageManagerFragment extends Fragment implements
         boolean handled = true;
 
         switch (item.getItemId()) {
-            /*
-            case it.uniurb.beedip.R.id.import_geopackage_url:
-                importGeopackageFromUrl();
-                break;
-            */
             case it.uniurb.beedip.R.id.import_geopackage_file:
                 importGeopackageFromFile();
                 break;
             case it.uniurb.beedip.R.id.create_geopackage:
-                //createGeoPackage();
                 createNewProject(getActivity());
                 break;
-            /*
-            case it.uniurb.beedip.R.id.clear_selected_tables:
-                //TODO: mettere a posto questa parte
-                if (selectedDataBase != null) {
-                    active.removeDatabase(selectedDataBase, false);
-                }
-                update();
-                break;
-                */
             default:
                 handled = false;
                 break;
@@ -4121,12 +4106,12 @@ public class GeoPackageManagerFragment extends Fragment implements
                     if (databases.get(i) != null) {
                         if (databases.get(i) != selectedDataBase){
                             selectedDataBase = databases.get(i);
-                            mCallback.onFeatureTableSelected(selectedDataBase);
                             active.clearActive();
-                            Iterator<GeoPackageTable> tablesIterator = databaseTables.get(i).iterator();
-                            while (tablesIterator.hasNext())
-                                active.addTable(tablesIterator.next());
+                            for (Iterator<GeoPackageTable> it = databaseTables.get(i).iterator(); it.hasNext(); ) {
+                                active.addTable(it.next());
+                            }
                             notifyDataSetChanged();
+                            mCallback.onFeatureTableSelected(selectedDataBase);
                         }
                     }
                 }

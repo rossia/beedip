@@ -44,9 +44,7 @@ import java.util.Date;
 
 import it.uniurb.beedip.data.CompassMeasurement;
 import it.uniurb.beedip.data.GeoPackageDatabases;
-import it.uniurb.beedip.data.OnMeasurementSentListener;
 import android.graphics.Color;
-
 import java.util.LinkedList;
 import java.util.List;
 import mil.nga.geopackage.GeoPackage;
@@ -58,12 +56,12 @@ import mil.nga.geopackage.features.user.FeatureDao;
 import mil.nga.geopackage.features.user.FeatureRow;
 import mil.nga.geopackage.geom.GeoPackageGeometryData;
 import mil.nga.geopackage.map.geom.GoogleMapShapeConverter;
-
+import it.uniurb.beedip.data.CompassMeasurement;
 import static android.content.Context.LOCATION_SERVICE;
 
 
 /**
- * Created by utente on 22/10/2017.
+ * CompassFragment
  */
 
 public class CompassFragment extends Fragment implements SensorEventListener {
@@ -96,13 +94,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     Toast featureTableToast;
 
-    View myView;
     private static SensorManager sensorService;
     private Sensor sensor;
     private int prevDipangle;
     private boolean msrLock;
     private boolean cfState;
-    String tmp;
     ImageView lIndicator;
     ImageView bIndicator;
     ImageView pLock;
@@ -139,8 +135,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     /*-----------------------------------------*/
     private CompassMeasurement.Younging selectedYounging;
     // Fragment to which measurement data is sent
-    private OnMeasurementSentListener onMeasurementSentListener;
     private List<String> faultSubtypes;
+
+
+
+
+
+
 
 
     @Override
@@ -165,8 +166,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         selectedYounging = CompassMeasurement.Younging.UPRIGHT;
         lastPositionAvaiable = new LatLng(43.70018, 12.64063);
         features = new LinkedList<>();
-        faultSubtypes = new LinkedList<String>(Arrays.asList("Normal","Reverse","Dextral ss","Sinixtral ss","Not defined"));
-        getLocation();
+        faultSubtypes = new LinkedList<>();
+        for (CompassMeasurement.FaultType ft : CompassMeasurement.FaultType.values()) {
+            faultSubtypes.add(ft.toString().toLowerCase());
+        }
 
 
         //Hiding useless buttons if class launched with compass on the bigger clock face
@@ -180,15 +183,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         active = GeoPackageDatabases.getInstance(getActivity());
         manager = GeoPackageFactory.getManager(getActivity());
-        myView = inflater.inflate(it.uniurb.beedip.R.layout.fragment_compass, container, false);
-
-        return myView;
+        return inflater.inflate(it.uniurb.beedip.R.layout.fragment_compass, container, false);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable final Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         lIndicator = (ImageView) getView().findViewById(R.id.littleIndicator);
         bIndicator = (ImageView) getView().findViewById(R.id.bigIndicator);
         pLock = (ImageView) getView().findViewById(R.id.padLock);
@@ -211,6 +211,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         this.getLocation();
         String initialCoordinates = lastPositionAvaiable.latitude+" / "+lastPositionAvaiable.longitude;
         coordinates.setText(initialCoordinates);
+
         pLock.setVisibility(View.GONE);
 
         /*-------------------------------------------SAVE BUTTON---------------------------------------------------------------------------------------------*/
@@ -219,17 +220,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(currentMeasure != null){
-                    getLocation();
-                     /*----------------------------------------------DEBUG MESSAGE--------------------------------------------------*/
-                    featureTableToast = Toast.makeText(getActivity(),
-                            "Lat: " + lastPositionAvaiable.latitude+" Lon :" + lastPositionAvaiable.longitude , Toast.LENGTH_SHORT);
-                    featureTableToast.show();
-                    /*-------------------------------------------------------------------------------------------------------------*/
-                    featureTableToast = Toast.makeText(getActivity(),
-                            "saving in table " + editFeaturesTable + " of db " + editFeaturesDatabase, Toast.LENGTH_LONG);
-                    featureTableToast.show();
-
+                if (currentMeasure != null) {
+                    Toast.makeText(getActivity(),
+                            "saving in table " + currentType + " of db " + editFeaturesDatabase,
+                            Toast.LENGTH_LONG).show();
                     if (currentSurveyor != null)
                         currentMeasure.setSurveyor(currentSurveyor);
                     if (currentLocation != null)
@@ -238,22 +232,17 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         currentMeasure.setRockUnit(currentRockunit);
                     if (currentNotes != null)
                         currentMeasure.setNote(currentNotes);
-                    try {
-                        saveMeasurement(new LatLng(lastPositionAvaiable.latitude, lastPositionAvaiable.longitude), currentMeasure, editFeaturesDatabase, editFeaturesTable);
-                    } catch (NullPointerException e) {
-                    Toast.makeText(getActivity(),"Not able to save a null measurement", Toast.LENGTH_LONG).show();
+                    if (saveMeasurement(new LatLng(lastPositionAvaiable.latitude, lastPositionAvaiable.longitude),
+                            currentMeasure, editFeaturesDatabase, currentType) < 0) {
+                        Toast.makeText(getActivity(),"Not able to save measurement", Toast.LENGTH_LONG).show();
                     }
-
                     save.setBackgroundResource(R.drawable.save_shape_green);
                     save.setTextColor(Color.parseColor("#32ae16"));
                     resetParameters();
-
                     save.setEnabled(false);
                 }
                 else {
-                    featureTableToast = Toast.makeText(getActivity(),
-                            "Not able to save if clock face is not locked.", Toast.LENGTH_LONG);
-                    featureTableToast.show();
+                    Toast.makeText(getActivity(), "Not able to save if clock face is not locked.", Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -263,15 +252,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
 
         /*-------------------------------------------COORDINATES BUTTON---------------------------------------------------------------------------------------------*/
-        coordinates.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getLocation();
-            }
-        });
-
-
-
 
         /*-------------------------------------------LITTLE CLOCK FACE BUTTON---------------------------------------------------------------------------------------------*/
         littleClockFace.setOnClickListener(new View.OnClickListener() {
@@ -285,14 +265,13 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     bIndicator.setImageResource(R.drawable.arrow);
                     //Hiding buttons
                     hideButtons();
-                    cfState = !cfState;
                 } else {
                     lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
                     bIndicator.setImageResource(R.drawable.mid);
                     //Reshowing buttons
                     showButtons();
-                    cfState = !cfState;
                 }
+                cfState = !cfState;
             }
 
         });
@@ -306,27 +285,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                    currentMeasure = new CompassMeasurement(currentInlcination, currentDipdirection, selectedYounging, isAccurate);
                    pLock.setVisibility(View.VISIBLE);
                    //Changes color to save button only if a project is selected
-                   if(!features.isEmpty()) {
+                   if(currentType != null) {
                        save.setBackgroundResource(R.drawable.save_shape_blue);
                        save.setTextColor(Color.parseColor("#00d2ff"));
                        //Switch to engage alertdialog to gain subtype on lock
-                       for(int i = 0; i < features.size(); i++) {
-                           if (features.get(i).equals(currentType)) {
-                               switch (i) {
-                                   //case 0 do not need subtype
-                                   case 1:
-                                       getTextSubtype();
-                                       break;
-                                   //case 2 do not need subtype
-                                   case 3:
-                                       getListSubtype();
-                                       //getDisplacement(); ---> Do Not Work
-                                       break;
-                                   case 4:
-                                       getTextSubtype();
-                                       break;
-                               }
-                           }
+                       if (currentType.equals(CompassMeasurement.SurfaceType.CLEAVAGE.toString())
+                               || currentType.equals(CompassMeasurement.SurfaceType.FAULT.toString())
+                               || currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString()) ) {
+                           getTextSubtype();
                        }
                    }
                } else {
@@ -334,16 +300,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                    pLock.setVisibility(View.GONE);
                    save.setBackgroundResource(R.drawable.save_shape_red);
                    save.setTextColor(Color.parseColor("#e11919"));
-                   //If list is not empty, so a project is selected
+                   //If a table inside a project is selected
                    //Enables save
-                   if(!features.isEmpty())
+                   if(currentType != null)
                        save.setEnabled(true);
                }
                 if (!isUpright) {
                     selectedYounging = CompassMeasurement.Younging.OVERTURNED;
                 }
-
-
             }
 
         });
@@ -353,7 +317,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             public boolean onLongClick(View v) {
                 //Switch from isUpright indicator to normal and viceversa
                 //Only if currentType = "bedding"
-                if(features.get(0).equals(currentType))
+                if(currentType.equals(CompassMeasurement.SurfaceType.BEDDING.toString()))
                     isUpright = !isUpright;
                 return true;
             }
@@ -361,7 +325,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         /*-------------------------------------------ROCK UNIT BUTTON---------------------------------------------------------------------------------------------*/
         rockUnit.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
@@ -412,9 +375,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                tmp = input.getText().toString();
-                                if (!tmp.equals("")) {
-                                    currentRockunit = tmp;
+                                if (!input.getText().toString().isEmpty()) {
+                                    currentRockunit = input.getText().toString();
                                     rockUnit.setTextColor(Color.parseColor("#00d2ff"));
                                 }
                                 else {
@@ -449,9 +411,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             @Override
             public void onClick(View arg0) {
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), R.style.AlertDialogCustom));
-
                 View customStyle = LayoutInflater.from(getActivity()).inflate(R.layout.custom_dialog_s, null);
-
                 //CHAGING ALERT DIALOG TITLE'S COLOR
                 // Specify the alert dialog title
                 String titleText = "Surveyor";
@@ -495,9 +455,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                tmp = input.getText().toString();
-                                if (!tmp.equals("")) {
-                                    currentSurveyor = tmp;
+                                if (!input.getText().toString().isEmpty()) {
+                                    currentSurveyor = input.getText().toString();
                                     operator.setTextColor(Color.parseColor("#00d2ff"));
                                 }
                                 else {
@@ -578,9 +537,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 alertDialog.setPositiveButton("Set",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                tmp = input.getText().toString();
-                                if (!tmp.equals("")) {
-                                    currentLocation = tmp;
+                                if (!input.getText().toString().isEmpty()) {
+                                    currentLocation = input.getText().toString();
                                     locality.setTextColor(Color.parseColor("#00d2ff"));
                                 }
                                 else {
@@ -637,8 +595,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 dialog.setAdapter(featuresAdapter, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int selected) {
-                        editFeaturesTable = featuresAdapter.getItem(selected);
-                        currentType = editFeaturesTable;
+                        currentType = features.get(selected);
                         type.setText(currentType);
                         dialog.dismiss();
                     }
@@ -718,9 +675,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
                 builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        tmp = input.getText().toString();
-                        if (!tmp.equals("")) {
-                            currentNotes = tmp;
+                        if (!input.getText().toString().isEmpty()) {
+                            currentNotes = input.getText().toString();
                             note.setTextColor(Color.parseColor("#00d2ff"));
                         }
                         else {
@@ -752,53 +708,23 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            onMeasurementSentListener = (OnMeasurementSentListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnMeasurementSentListener");
-        }
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (currentMeasure == null) {
-            if(!features.isEmpty()) {
+            this.compassCalculation(sensorEvent);
+            if(currentType != null) {
                 //Do something while feature list is not empty
-                for(int i = 0; i < features.size(); i++){
-                    if(features.get(i).equals(currentType)){
                         //Choosing the right behavior
-                        switch (i){
-                            case 0:
-                                this.compassCalculation(sensorEvent);
-                                this.planeCalculation(sensorEvent);
-                                break;
-                            case 1:
-                                this.compassCalculation(sensorEvent);
-                                this.planeCalculation(sensorEvent);
-                                break;
-                            case 2:
-                                this.compassCalculation(sensorEvent);
-                                this.planeCalculation(sensorEvent);
-                                break;
-                            case 3:
-                                this.compassCalculation(sensorEvent);
-                                this.planeCalculation(sensorEvent);
-                                break;
-                            case 4:
-                                this.compassCalculation(sensorEvent);
-                                this.lineCalculation(sensorEvent);
-                                break;
-                        }
-                    }
-                }
+                if (currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString()))
+                    this.lineCalculation(sensorEvent);
+                else
+                    this.planeCalculation(sensorEvent);
             }
             else{
                 //Do something when feature list is empty
                 //Bedding as default? (Dunno!)
-                this.compassCalculation(sensorEvent);
                 this.planeCalculation(sensorEvent);
             }
         }
@@ -825,12 +751,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         if (!editFeaturesDatabase.isEmpty() && !geoPackage.getFeatureTables().isEmpty()){
             features = geoPackage.getFeatureTables();
             type.setEnabled(true);
-            editFeaturesTable = features.get(0);
-            type.setText(editFeaturesTable.toString());
+            currentType = features.get(0);
+            type.setText(currentType);
             save.setEnabled(true);
             save.setText("Save");
         } else {
-
+            Toast.makeText(getActivity(), "no feature table available!", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -838,9 +764,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
      * Save the Compass Measurement in the selected layer
      */
 
-    private long saveMeasurement(LatLng position, CompassMeasurement measurement, String db, String feature ) throws  NullPointerException {
-        if (measurement != null )
-            throw new NullPointerException();
+    private long saveMeasurement(LatLng position, CompassMeasurement measurement, String db, String feature )  {
         long resultRowId = -1;
         if (db != null && feature != null && manager != null) {
             GeoPackage geoPackage = manager.open(db);
@@ -880,22 +804,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 active.setModified(true);
 
             } catch (Exception e) {
-
-                    GeoPackageUtils
-                            .showMessage(
-                                    getActivity(),
-                                    getString(R.string.edit_features_save_label),
-                                    "GeoPackage error saving");
-
+                    GeoPackageUtils.showMessage(getActivity(),getString(R.string.edit_features_save_label),"GeoPackage error saving");
             }
         }
         return resultRowId;
     }
 
-    private void sendMeasurementData(CompassMeasurement measurement){
-        if(onMeasurementSentListener != null)
-            onMeasurementSentListener.onMeasurementSent(measurement);
-    }
 
     private void hideButtons(){
         rockUnit.setVisibility(View.GONE);
@@ -1255,7 +1169,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Clino text-printed values
             toShow = currentInlcination+"/"+currentDipdirection;
             displayValues.setText(toShow);
-            //sendMeasurementData(compassMesurement);
         }
         else{
             if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
@@ -1377,9 +1290,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         alertDialog.setPositiveButton("Set",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        tmp = input.getText().toString();
-                        if (!tmp.equals("")) {
-                            currentSubtype = tmp;
+                        if (!input.getText().toString().isEmpty()) {
+                            currentSubtype = input.getText().toString();
                         }
                         else {
                             currentSubtype = null;
@@ -1488,9 +1400,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         alertDialog.setPositiveButton("Set",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        tmp = input.getText().toString();
-                        if (!tmp.equals("")) {
-                            currentDisplacement = Integer.parseInt(tmp);
+                        if (!input.getText().toString().isEmpty()) {
+                            currentDisplacement = Integer.parseInt(input.getText().toString());
                         }
                         else {
                             currentDisplacement = -1;
@@ -1560,9 +1471,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         alertDialog.setPositiveButton("Set",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        tmp = input.getText().toString();
-                        if (!tmp.equals("")) {
-                            currentKindicators = tmp;
+                        if (!input.getText().toString().isEmpty()) {
+                            currentKindicators = input.getText().toString();
                         }
                         else {
                             currentKindicators = null;

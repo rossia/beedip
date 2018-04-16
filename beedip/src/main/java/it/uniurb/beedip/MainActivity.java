@@ -23,7 +23,7 @@ import it.uniurb.beedip.data.OnMeasurementSentListener;
  * @author osbornb
  */
 public class MainActivity extends Activity implements
-        NavigationDrawerFragment.NavigationDrawerCallbacks, OnMeasurementSentListener,
+        NavigationDrawerFragment.NavigationDrawerCallbacks,
         GeoPackageManagerFragment.OnFeatureTableSelectedListener {
 
     /**
@@ -327,10 +327,7 @@ public class MainActivity extends Activity implements
         }
     }
     // TODO: rimuovere se non serve
-    @Override
-    public void onMeasurementSent(CompassMeasurement compassMeasurement) {
-        mapFragment.setMeasurement(compassMeasurement);
-    }
+
     @Override
     public void onFeatureTableSelected(String editFeaturesDatabase) {
         compassFragment.setEditFeaturesTable(editFeaturesDatabase);

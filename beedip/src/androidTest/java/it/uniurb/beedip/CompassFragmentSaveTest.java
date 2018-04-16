@@ -60,6 +60,7 @@ public class CompassFragmentSaveTest {
     public void testManager() throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException  {
         assertNotNull(manager);
         assertNotNull(fgmtManager);
+        assertNotNull(fgmCompassFragment);
         mainActivity.runOnUiThread(new Runnable() {
             public void run() {
                 try {
