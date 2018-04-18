@@ -724,7 +724,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             }
             else{
                 //Do something when feature list is empty
-                //Bedding as default? (Dunno!)
+                //Bedding as default
                 this.planeCalculation(sensorEvent);
             }
         }
@@ -990,9 +990,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //COMPASS
         //Compass animation
         //Acquiring values
-        String toShow;
         int degree;
         degree = Math.round(sensorEvent.values[0]);
+        this.compassAnimation(degree);
+    }
+
+    /*Big clock face animation on compass mode*/
+    private void compassAnimation(int degree){
+        String toShow;
         RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -degree, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
         ra_comp.setDuration(4000);
         ra_comp.setFillAfter(true);
@@ -1013,9 +1018,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     public void planeCalculation(SensorEvent sensorEvent){
         //INCLINOMETER
         //Acquiring values
-        String toShow;
         boolean upsideDown = false;
-        boolean avoidAnimation = false;
         //int usOffset;
         int x = Math.round(sensorEvent.values[0]);
         int y = Math.round(sensorEvent.values[1]);
@@ -1101,6 +1104,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
             toDisplay = 90;
 
+        this.planeAnimation(dipAngle, distance, toDisplay, upsideDown);
+    }
+
+    /*Big clock face animation on geological compass mode*/
+    private void planeAnimation(int dipAngle, int distance, int toDisplay, boolean upsideDown){
+        String toShow;
+        boolean avoidAnimation = false;
+
         //Offsetting dipAngle for animation
         dipAngle = dipAngle + 180;
         if(dipAngle >= 360)
@@ -1113,7 +1124,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             dipAngle = dipAngle - 180;
             dipAngle = 180 - dipAngle;
         }
-
         if(upsideDown) {
             dipAngle = dipAngle + 180;
             if(dipAngle >= 360)
@@ -1136,8 +1146,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 bIndicator.setImageResource(R.drawable.mid);
             }
-            else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) ||
-                    (Math.abs(y) > 43)  && (Math.abs(z) > 43))){
+            else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) /*||   -------> Bug in the animation to solve here!
+                    (Math.abs(y) > 43)  && (Math.abs(z) > 43)*/)){
                 bIndicator.setImageResource(R.drawable.sho);
             }
             else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
@@ -1169,6 +1179,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //Clino text-printed values
             toShow = currentInlcination+"/"+currentDipdirection;
             displayValues.setText(toShow);
+            //sendMeasurementData(compassMesurement);
         }
         else{
             if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
@@ -1211,7 +1222,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     private void lineCalculation(SensorEvent sensorEvent) {
         //Calculate values and change images
-        String toShow;
         if(cfState) {
             currentDipdirection = Math.round(sensorEvent.values[0]);
             currentInlcination = Math.round(sensorEvent.values[1]);
@@ -1236,10 +1246,36 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     currentDipdirection -= 360;
                 }
             }
-            toShow = currentInlcination + "/" + currentDipdirection;
-            displayValues.setText(toShow);
         }
-            //Need to implement the part for the graphic response
+        this.lineAnimation();
+    }
+
+    private void lineAnimation(){
+        String toShow;
+        //Displaying the values
+        toShow = currentInlcination + "/" + currentDipdirection;
+        displayValues.setText(toShow);
+
+        //Animating the compass
+        RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -currentDipdirection, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        ra_comp.setDuration(4000);
+        ra_comp.setFillAfter(true);
+        ra_comp.setRepeatCount(Animation.INFINITE);
+        if (cfState) {
+            bIndicator.setImageResource(R.drawable.arrow);
+            bIndicator.getLayoutParams().width = 150;
+            bIndicator.getLayoutParams().height = 150;
+            bIndicator.requestLayout();
+            bIndicator.setAnimation(ra_comp);
+            bIndicator.startAnimation(ra_comp);
+        } else {
+            lIndicator.setImageResource(R.drawable.arrow);
+            lIndicator.getLayoutParams().width = 35;
+            lIndicator.getLayoutParams().height = 35;
+            lIndicator.requestLayout();
+            lIndicator.setAnimation(ra_comp);
+            lIndicator.startAnimation(ra_comp);
+        }
     }
 
     /*-----------------FUNCTION TO ACQUIRE DATA ON BIG CLOCK FACE LOCK-------------------------------------------------------------------------------------------------------*/
