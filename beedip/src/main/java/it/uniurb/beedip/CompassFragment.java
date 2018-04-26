@@ -22,6 +22,7 @@ import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -58,6 +59,7 @@ import mil.nga.geopackage.geom.GeoPackageGeometryData;
 import mil.nga.geopackage.map.geom.GoogleMapShapeConverter;
 import it.uniurb.beedip.data.CompassMeasurement;
 import static android.content.Context.LOCATION_SERVICE;
+import static android.content.Context.SENSOR_SERVICE;
 
 
 /**
@@ -137,6 +139,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     // Fragment to which measurement data is sent
     private List<String> faultSubtypes;
 
+    //INITIALIZING SENSORS
+    Sensor accelerometer;
+    Sensor magnetometer;
+
 
 
 
@@ -175,6 +181,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //Hiding useless buttons if class launched with compass on the bigger clock face
         if(!cfState)
             hideButtons();
+
+        super.onCreate(savedInstanceState);
+        sensorService = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
+        accelerometer = sensorService.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magnetometer = sensorService.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Nullable
@@ -193,10 +205,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         bIndicator = (ImageView) getView().findViewById(R.id.bigIndicator);
         pLock = (ImageView) getView().findViewById(R.id.padLock);
         displayValues = (TextView) getView().findViewById(it.uniurb.beedip.R.id.testo);
-        //SensorManager's initialization (It allow to declare sensor variables)
-        sensorService = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
+
+
+        /*SensorManager's initialization (It allow to declare sensor variables)
+
+        sensorService = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
         sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION); //---------------------------- change, is deprecated!
-        sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorService.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);*/
+
         //Buttons init
         bigClockFace = (ImageButton) getView().findViewById(R.id.bigClockface);
         littleClockFace = (ImageButton) getView().findViewById(R.id.littleClockface);
@@ -710,22 +726,47 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         super.onAttach(activity);
     }
 
+    float[] mGravity = null;
+    float[] mGeomagnetic = null;
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+
+        boolean success;
+        float orientation[] = new float[3];
+
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+            this.mGravity = sensorEvent.values;
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+            this.mGeomagnetic = sensorEvent.values;
+        if (mGravity != null && mGeomagnetic != null) {
+            float R[] = new float[9];
+            float I[] = new float[9];
+            success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+            if (success) {
+                //Toast.makeText(getActivity(),"SUCCESS", Toast.LENGTH_LONG).show();
+                SensorManager.getOrientation(R, orientation);
+                orientation[0] = (float) Math.toDegrees(orientation[0]);
+                orientation[1] = (float) Math.toDegrees(orientation[1]);
+                orientation[2] = (float) Math.toDegrees(orientation[2]);
+            }
+
+        }
+
+
         if (currentMeasure == null) {
-            this.compassCalculation(sensorEvent);
+            this.compassCalculation(orientation);
             if(currentType != null) {
                 //Do something while feature list is not empty
                         //Choosing the right behavior
                 if (currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString()))
-                    this.lineCalculation(sensorEvent);
+                    this.lineCalculation(orientation);
                 else
-                    this.planeCalculation(sensorEvent);
+                    this.planeCalculation(orientation);
             }
             else{
                 //Do something when feature list is empty
                 //Bedding as default
-                this.planeCalculation(sensorEvent);
+                this.planeCalculation(orientation);
             }
         }
     }
@@ -738,11 +779,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     @Override
     public void onPause() {
         super.onPause();
+        //sensorService.unregisterListener(this);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        sensorService.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        sensorService.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI);
     }
 
     public void setEditFeaturesTable (String editFeaturesDatabase){
@@ -986,12 +1030,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         /*-------------------------------------------------------------------------------------------------------------*/
     }
 
-    public void compassCalculation(SensorEvent sensorEvent){
+    public void compassCalculation(float[] orientation){
         //COMPASS
         //Compass animation
         //Acquiring values
         int degree;
-        degree = Math.round(sensorEvent.values[0]);
+        degree = Math.round(orientation[0]);
         this.compassAnimation(degree);
     }
 
@@ -1015,14 +1059,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         }
     }
 
-    public void planeCalculation(SensorEvent sensorEvent){
+    public void planeCalculation(float[] orientation){
         //INCLINOMETER
         //Acquiring values
         boolean upsideDown = false;
         //int usOffset;
-        int x = Math.round(sensorEvent.values[0]);
-        int y = Math.round(sensorEvent.values[1]);
-        int z = Math.round(sensorEvent.values[2]);
+        int x = Math.round(orientation[0]);
+        int y = Math.round(orientation[1]);
+        int z = Math.round(orientation[2]);
         //Offsetting y axis
         if (y == 0) {
             //nothing
@@ -1034,7 +1078,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             y = -(90 + (y + 90));
         }
         double y1 = (double) y;
-        double z1 = sensorEvent.values[2];
+        double z1 = orientation[2];
         double posy,
                 posz,
                 ypar,
@@ -1083,7 +1127,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         }
 
         //Finding out if phone is upside down and telling related values
-        if((Math.abs(Math.round(sensorEvent.values[1])) > 90)){
+        if((Math.abs(Math.round(orientation[1])) > 90)){
             upsideDown = true;
             dipAngle = dipAngle + 180;
             if(dipAngle >= 360)
@@ -1220,11 +1264,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         }
     }
 
-    private void lineCalculation(SensorEvent sensorEvent) {
+    private void lineCalculation(float[] orientation) {
         //Calculate values and change images
         if(cfState) {
-            currentDipdirection = Math.round(sensorEvent.values[0]);
-            currentInlcination = Math.round(sensorEvent.values[1]);
+            currentDipdirection = Math.round(orientation[0]);
+            currentInlcination = Math.round(orientation[1]);
 
             if(currentInlcination <= 90 && currentInlcination >= 0){
                 //Nothing
