@@ -136,20 +136,30 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private CompassMeasurement.Younging selectedYounging;
     // Fragment to which measurement data is sent
     private List<String> faultSubtypes;
+    private float orientation[];
 
     //INITIALISING SENSORS
     Sensor accelerometer;
     Sensor magnetometer;
 
-    //Array used for the value stabilization algorithm
+    //LinkedList used for the value stabilization algorithm
     private LinkedList<Integer> stabilityListCompass;
     private LinkedList<Integer> stabilityListInclination;
     private LinkedList<Integer> stabilityListDipDirection;
+
+    //Array used for the determination of the rotation matrix
+    private float[] mGravity;
+    private float[] mGeomagnetic;
+
+    //Token used for the plane animation
+    private boolean isupsideDownTracker;
 
     //Costants
     private final int STABILITY_RANGE_CO = 100; //Stability range for the inclination
     private final int STABILITY_RANGE_IN = 100; //Stability range for the inclination
     private final int STABILITY_RANGE_DD = 250; //Stability range for the dip direction
+
+
 
 
 
@@ -170,6 +180,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         msrLock = false;
         isUpright = true;
         cfState = true;
+        isupsideDownTracker = false;
         currentLocation = null;
         currentNotes = null;
         currentRockunit = null;
@@ -181,12 +192,16 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         lastPositionAvaiable = new LatLng(43.70018, 12.64063); //default coordinates
         features = new LinkedList<>();
         faultSubtypes = new LinkedList<>();
-        for (CompassMeasurement.FaultType ft : CompassMeasurement.FaultType.values()) {
-            faultSubtypes.add(ft.toString().toLowerCase());
-        }
         stabilityListCompass = new LinkedList<>();
         stabilityListInclination = new LinkedList<>();
         stabilityListDipDirection = new LinkedList<>();
+        orientation = new float[3];
+        mGravity = null;
+        mGeomagnetic = null;
+
+        for (CompassMeasurement.FaultType ft : CompassMeasurement.FaultType.values()) {
+            faultSubtypes.add(ft.toString().toLowerCase());
+        }
 
 
         //Hiding useless buttons if class launched with compass on the bigger clock face
@@ -756,65 +771,72 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         super.onAttach(activity);
     }
 
-    float[] mGravity = null;
-    float[] mGeomagnetic = null;
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
 
         boolean success;
-        float orientation[] = new float[3];
+        //float orientation[] = new float[3];
+        if (currentMeasure == null) {
+            //Da qui
+            if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+                this.mGravity = sensorEvent.values;
+            if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+                this.mGeomagnetic = sensorEvent.values;
+            if (mGravity != null && mGeomagnetic != null) {
+                float R[] = new float[9];
+                float I[] = new float[9];
+                success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+                if (success) {
+                    //Toast.makeText(getActivity(),"SUCCESS", Toast.LENGTH_LONG).show();
+                    SensorManager.getOrientation(R, orientation);
+                    orientation[0] = (float) Math.toDegrees(orientation[0]);
+                    orientation[1] = (float) Math.toDegrees(orientation[1]);
+                    orientation[2] = (float) Math.toDegrees(orientation[2]);
+                }
+                //adjustements
+                //Yaw
+                orientation[0] += 360;
+                if (orientation[0] >= 360)
+                    orientation[0] -= 360;
 
-        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-            this.mGravity = sensorEvent.values;
-        if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-            this.mGeomagnetic = sensorEvent.values;
-        if (mGravity != null && mGeomagnetic != null) {
-            float R[] = new float[9];
-            float I[] = new float[9];
-            success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-            if (success) {
-                //Toast.makeText(getActivity(),"SUCCESS", Toast.LENGTH_LONG).show();
-                SensorManager.getOrientation(R, orientation);
-                orientation[0] = (float) Math.toDegrees(orientation[0]);
-                orientation[1] = (float) Math.toDegrees(orientation[1]);
-                orientation[2] = (float) Math.toDegrees(orientation[2]);
-            }
+                //Pitch
+                //Fine as it is
 
-            //adjustements
-            //Yaw
-            orientation[0] += 360;
-            if(orientation[0] >= 360)
-                orientation[0] -= 360;
+                //Roll
+                if (orientation[2] >= 90)
+                    orientation[2] = Math.abs(orientation[2] - 180);
+                if (orientation[2] <= -90)
+                    orientation[2] = Math.abs(orientation[2] + 180);
+                orientation[2] = -orientation[2];
+                //a qui
 
-            //Pitch
-           //Fine as it is
-
-            //Roll
-            if(orientation[2] >= 90)
-                orientation[2] = Math.abs(orientation[2] - 180);
-            if(orientation[2] <= -90)
-                orientation[2] = Math.abs(orientation[2] + 180);
-            orientation[2] = - orientation[2];
-
+            } //compresa questa parentesi
 
         }
 
 
-        if (currentMeasure == null) {
+        if(currentMeasure == null) {
             this.compassCalculation(orientation);
-            if(currentType != null) {
+            if (currentType != null) {
                 //Do something while feature list is not empty
-                        //Choosing the right behavior
+                //Choosing the right behavior
                 if (currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString()))
                     this.lineCalculation(orientation);
                 else
                     this.planeCalculation(orientation);
-            }
-            else{
+            } else {
                 //Do something when feature list is empty
                 //Bedding as default
                 this.planeCalculation(orientation);
             }
+        }
+        else{
+            this.compassAnimation(currentCompass);
+            if(currentType.equals(features.get(4)))
+                this.lineAnimation(currentInlcination, currentDipdirection);
+            else
+                this.planeAnimation(prevDipangle, currentDipdirection, currentInlcination, isupsideDownTracker, false);
+            //this.lineAnimation(currentInlcination, currentDipdirection);
         }
     }
 
@@ -1208,40 +1230,42 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         distance = this.getAverageStability(2);
 
         //Calls for the animation
-        this.planeAnimation(dipAngle, distance, toDisplay, upsideDown);
+        this.planeAnimation(dipAngle, distance, toDisplay, upsideDown, true);
     }
 
     /*Big clock face animation on geological compass mode*/
-    private void planeAnimation(int dipAngle, int distance, int toDisplay, boolean upsideDown){
+    private void planeAnimation(int dipAngle, int distance, int toDisplay, boolean upsideDown, boolean doOffset){
         String toShow;
         boolean avoidAnimation = false;
 
-        //Offsetting dipAngle for animation
-        dipAngle = dipAngle + 180;
-        if(dipAngle >= 360)
-            dipAngle = dipAngle - 360;
-        if((dipAngle > 0) && (dipAngle <= 180)) {
-            dipAngle = 180 - dipAngle;
-            dipAngle = 180 + dipAngle;
-        }
-        else if((dipAngle > 180) && (dipAngle < 360)) {
-            dipAngle = dipAngle - 180;
-            dipAngle = 180 - dipAngle;
-        }
-        if(upsideDown) {
+        if(doOffset) {
+            //Offsetting dipAngle for animation
             dipAngle = dipAngle + 180;
-            if(dipAngle >= 360)
+            if (dipAngle >= 360)
                 dipAngle = dipAngle - 360;
+            if ((dipAngle > 0) && (dipAngle <= 180)) {
+                dipAngle = 180 - dipAngle;
+                dipAngle = 180 + dipAngle;
+            } else if ((dipAngle > 180) && (dipAngle < 360)) {
+                dipAngle = dipAngle - 180;
+                dipAngle = 180 - dipAngle;
+            }
+            if (upsideDown) {
+                dipAngle = dipAngle + 180;
+                if (dipAngle >= 360)
+                    dipAngle = dipAngle - 360;
+            }
         }
 
         RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-        ra_clino.setDuration(6000);
+        ra_clino.setDuration(4000);
         ra_clino.setFillAfter(true);
         ra_clino.setRepeatCount(Animation.INFINITE);
-        prevDipangle = dipAngle;
-        currentDipdirection = distance;
-        currentInlcination = toDisplay;
+        this.prevDipangle = dipAngle;
+        this.currentDipdirection = distance;
+        this.currentInlcination = toDisplay;
+        this.isupsideDownTracker = upsideDown;
 
         if(cfState) {
             if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
@@ -1250,7 +1274,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 bIndicator.setImageResource(R.drawable.mid);
             }
-            else if((isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) /*||   -------> Bug in the animation to solve here!
+            else if((isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) /*||
                     (Math.abs(y) > 43)  && (Math.abs(z) > 43)*/)){
                 bIndicator.setImageResource(R.drawable.sho);
             }
@@ -1330,7 +1354,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         int inclination = Math.round(orientation[1]);
 
         if(inclination <= 90 && inclination >= 0){
-                //Nothing
+            //Nothing
         }
         else if(((inclination < 180) && (inclination > 90)) || (Math.abs(inclination) == 180)) {
             inclination = Math.abs(Math.abs(inclination) - 180);
@@ -1367,7 +1391,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         //Animating the compass
         RotateAnimation ra_comp = new RotateAnimation(0,0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-        ra_comp.setDuration(6000);
+        ra_comp.setDuration(4000);
         ra_comp.setFillAfter(true);
         ra_comp.setRepeatCount(Animation.INFINITE);
         if (cfState) {
