@@ -651,7 +651,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
 
                 final ArrayAdapter<String> featuresAdapter = new ArrayAdapter<String>(
-                        getActivity(), android.R.layout.simple_spinner_item, features);
+                        getActivity(), android.R.layout.simple_list_item_1, features);
                 dialog.setAdapter(featuresAdapter, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int selected) {
@@ -1509,7 +1509,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
 
         final ArrayAdapter<String> featuresAdapter = new ArrayAdapter<String>(
-                getActivity(), android.R.layout.simple_spinner_item, faultSubtypes);
+                getActivity(), android.R.layout.simple_list_item_1, faultSubtypes);
         dialog.setAdapter(featuresAdapter, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int selected) {
