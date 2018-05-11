@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,13 +15,13 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.IntegerRes;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -40,7 +39,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import java.util.Arrays;
 import java.util.Date;
 
 import it.uniurb.beedip.data.CompassMeasurement;
@@ -57,7 +55,7 @@ import mil.nga.geopackage.features.user.FeatureDao;
 import mil.nga.geopackage.features.user.FeatureRow;
 import mil.nga.geopackage.geom.GeoPackageGeometryData;
 import mil.nga.geopackage.map.geom.GoogleMapShapeConverter;
-import it.uniurb.beedip.data.CompassMeasurement;
+
 import static android.content.Context.LOCATION_SERVICE;
 import static android.content.Context.SENSOR_SERVICE;
 
@@ -139,9 +137,19 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     // Fragment to which measurement data is sent
     private List<String> faultSubtypes;
 
-    //INITIALIZING SENSORS
+    //INITIALISING SENSORS
     Sensor accelerometer;
     Sensor magnetometer;
+
+    //Array used for the value stabilization algorithm
+    private LinkedList<Integer> stabilityListCompass;
+    private LinkedList<Integer> stabilityListInclination;
+    private LinkedList<Integer> stabilityListDipDirection;
+
+    //Costants
+    private final int STABILITY_RANGE_CO = 100; //Stability range for the inclination
+    private final int STABILITY_RANGE_IN = 100; //Stability range for the inclination
+    private final int STABILITY_RANGE_DD = 250; //Stability range for the dip direction
 
 
 
@@ -170,12 +178,15 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         currentDisplacement = -1; //Incoherent lenght value when not defined
         currentKindicators = null;
         selectedYounging = CompassMeasurement.Younging.UPRIGHT;
-        lastPositionAvaiable = new LatLng(43.70018, 12.64063);
+        lastPositionAvaiable = new LatLng(43.70018, 12.64063); //default coordinates
         features = new LinkedList<>();
         faultSubtypes = new LinkedList<>();
         for (CompassMeasurement.FaultType ft : CompassMeasurement.FaultType.values()) {
             faultSubtypes.add(ft.toString().toLowerCase());
         }
+        stabilityListCompass = new LinkedList<>();
+        stabilityListInclination = new LinkedList<>();
+        stabilityListDipDirection = new LinkedList<>();
 
 
         //Hiding useless buttons if class launched with compass on the bigger clock face
@@ -275,15 +286,32 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             public void onClick(View v) {
                 //Clicking the little clock face compass and inclinometer will be switched in the
                 //main clock face
+                String textToSwap;
                 //Switching compass and clinometer depending on what's active
                 if (cfState) {
-                    lIndicator.setImageResource(it.uniurb.beedip.R.drawable.mid);
-                    bIndicator.setImageResource(R.drawable.arrow);
+                    if(!currentType.equals(features.get(4))) {
+                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.mid);
+                        bIndicator.setImageResource(R.drawable.arrow);
+                    }
+                    else{
+                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
+                        bIndicator.setImageResource(R.drawable.arrow);
+                    }
+                    textToSwap = currentCompass+"°";
+                    displayValues.setText(textToSwap);
                     //Hiding buttons
                     hideButtons();
                 } else {
-                    lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
-                    bIndicator.setImageResource(R.drawable.mid);
+                    if(!currentType.equals(features.get(4))) {
+                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
+                        bIndicator.setImageResource(R.drawable.mid);
+                    }
+                    else{
+                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
+                        bIndicator.setImageResource(R.drawable.arrow);
+                    }
+                    textToSwap = currentInlcination+"/"+currentDipdirection;
+                    displayValues.setText(textToSwap);
                     //Reshowing buttons
                     showButtons();
                 }
@@ -306,10 +334,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                        save.setTextColor(Color.parseColor("#00d2ff"));
                        //Switch to engage alertdialog to gain subtype on lock
                        if (currentType.equals(CompassMeasurement.SurfaceType.CLEAVAGE.toString())
-                               || currentType.equals(CompassMeasurement.SurfaceType.FAULT.toString())
-                               || currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString()) ) {
+                           || currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString()) ) {
                            getTextSubtype();
                        }
+                       else if(currentType.equals(CompassMeasurement.SurfaceType.FAULT.toString()))
+                           getListSubtype();
                    }
                } else {
                    currentMeasure = null;
@@ -614,6 +643,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                         currentType = features.get(selected);
                         type.setText(currentType);
                         dialog.dismiss();
+                        initStability();
                     }
                 }).create().show();
             }
@@ -749,6 +779,23 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 orientation[1] = (float) Math.toDegrees(orientation[1]);
                 orientation[2] = (float) Math.toDegrees(orientation[2]);
             }
+
+            //adjustements
+            //Yaw
+            orientation[0] += 360;
+            if(orientation[0] >= 360)
+                orientation[0] -= 360;
+
+            //Pitch
+           //Fine as it is
+
+            //Roll
+            if(orientation[2] >= 90)
+                orientation[2] = Math.abs(orientation[2] - 180);
+            if(orientation[2] <= -90)
+                orientation[2] = Math.abs(orientation[2] + 180);
+            orientation[2] = - orientation[2];
+
 
         }
 
@@ -1036,6 +1083,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         //Acquiring values
         int degree;
         degree = Math.round(orientation[0]);
+
+        //Stabilization algorithm
+        this.populateStability(degree, 0);
+        degree = this.getAverageStability(0);
+
         this.compassAnimation(degree);
     }
 
@@ -1148,6 +1200,14 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
             toDisplay = 90;
 
+
+        //Stabilization algorithm
+        this.populateStability(toDisplay, 1);   //toDisplay = inclination
+        this.populateStability(distance, 2); //distance = dipDirection
+        toDisplay = this.getAverageStability(1);
+        distance = this.getAverageStability(2);
+
+        //Calls for the animation
         this.planeAnimation(dipAngle, distance, toDisplay, upsideDown);
     }
 
@@ -1176,7 +1236,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
                 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-        ra_clino.setDuration(4000);
+        ra_clino.setDuration(6000);
         ra_clino.setFillAfter(true);
         ra_clino.setRepeatCount(Animation.INFINITE);
         prevDipangle = dipAngle;
@@ -1184,23 +1244,23 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         currentInlcination = toDisplay;
 
         if(cfState) {
-            if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+            if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                 bIndicator.setImageResource(R.drawable.nlong);
             }
-            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 bIndicator.setImageResource(R.drawable.mid);
             }
-            else if((!isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) /*||   -------> Bug in the animation to solve here!
+            else if((isUpright) && (((currentInlcination > 60) && (currentInlcination <= 89)) /*||   -------> Bug in the animation to solve here!
                     (Math.abs(y) > 43)  && (Math.abs(z) > 43)*/)){
                 bIndicator.setImageResource(R.drawable.sho);
             }
-            else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+            else if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                 bIndicator.setImageResource(R.drawable.rlong);
             }
-            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 bIndicator.setImageResource(R.drawable.rmid);
             }
-            else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+            else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                 bIndicator.setImageResource(R.drawable.rsho);
             }
             else if((currentInlcination <= 3) && (currentInlcination >= 0)){
@@ -1226,22 +1286,22 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             //sendMeasurementData(compassMesurement);
         }
         else{
-            if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+            if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                 lIndicator.setImageResource(R.drawable.nlong);
             }
-            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 lIndicator.setImageResource(R.drawable.mid);
             }
-            else if((!isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+            else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                 lIndicator.setImageResource(R.drawable.sho);
             }
-            else if((isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
+            else if((!isUpright) && (currentInlcination > 3) && (currentInlcination <= 30)){
                 lIndicator.setImageResource(R.drawable.rlong);
             }
-            else if((isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
+            else if((!isUpright) && (currentInlcination > 30) && (currentInlcination <= 60)){
                 lIndicator.setImageResource(R.drawable.rmid);
             }
-            else if((isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
+            else if((! isUpright) && (currentInlcination > 60) && (currentInlcination <= 89)){
                 lIndicator.setImageResource(R.drawable.rsho);
             }
             else if((currentInlcination <= 3) && (currentInlcination >= 0)){
@@ -1266,43 +1326,48 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
     private void lineCalculation(float[] orientation) {
         //Calculate values and change images
-        if(cfState) {
-            currentDipdirection = Math.round(orientation[0]);
-            currentInlcination = Math.round(orientation[1]);
+        int dipDirection = Math.round(orientation[0]);
+        int inclination = Math.round(orientation[1]);
 
-            if(currentInlcination <= 90 && currentInlcination >= 0){
+        if(inclination <= 90 && inclination >= 0){
                 //Nothing
-            }
-            else if(((currentInlcination < 180) && (currentInlcination > 90)) || (Math.abs(currentInlcination) == 180)) {
-                currentInlcination = Math.abs(Math.abs(currentInlcination) - 180);
-                currentDipdirection += 180;
-                if(currentDipdirection > 360){
-                    currentDipdirection -= 360;
-                }
-            }
-            else if((currentInlcination > -180) && (currentInlcination <= -90)) {
-                currentInlcination = Math.abs(currentInlcination + 180);
-            }
-            else if((currentInlcination > -90) && (currentInlcination < 0)) {
-                currentInlcination = Math.abs(currentInlcination);
-                currentDipdirection += 180;
-                if(currentDipdirection > 360){
-                    currentDipdirection -= 360;
-                }
+        }
+        else if(((inclination < 180) && (inclination > 90)) || (Math.abs(inclination) == 180)) {
+            inclination = Math.abs(Math.abs(inclination) - 180);
+            dipDirection += 180;
+            if(dipDirection > 360){
+                dipDirection -= 360;
             }
         }
-        this.lineAnimation();
+        else if((inclination > -180) && (inclination <= -90)) {
+            inclination = Math.abs(inclination + 180);
+        }
+        else if((inclination > -90) && (inclination < 0)) {
+            inclination = Math.abs(inclination);
+            dipDirection += 180;
+            if(dipDirection > 360){
+                dipDirection -= 360;
+            }
+        }
+        //Stabilization algorithm
+        this.populateStability(inclination, 1);
+        this.populateStability(dipDirection, 2);
+        inclination = this.getAverageStability(1);
+        dipDirection = this.getAverageStability(2);
+
+        //Calls for the animation
+        this.lineAnimation(inclination, dipDirection);
     }
 
-    private void lineAnimation(){
+    private void lineAnimation(int plunge, int plungeDirection){
         String toShow;
         //Displaying the values
-        toShow = currentInlcination + "/" + currentDipdirection;
-        displayValues.setText(toShow);
+        currentInlcination = plunge;
+        currentDipdirection = plungeDirection;
 
         //Animating the compass
-        RotateAnimation ra_comp = new RotateAnimation(-currentCompass, -currentDipdirection, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-        ra_comp.setDuration(4000);
+        RotateAnimation ra_comp = new RotateAnimation(0,0, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        ra_comp.setDuration(6000);
         ra_comp.setFillAfter(true);
         ra_comp.setRepeatCount(Animation.INFINITE);
         if (cfState) {
@@ -1312,6 +1377,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             bIndicator.requestLayout();
             bIndicator.setAnimation(ra_comp);
             bIndicator.startAnimation(ra_comp);
+            //Displaying measured values
+            toShow = currentInlcination + "/" + currentDipdirection;
+            displayValues.setText(toShow);
         } else {
             lIndicator.setImageResource(R.drawable.arrow);
             lIndicator.getLayoutParams().width = 35;
@@ -1319,6 +1387,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             lIndicator.requestLayout();
             lIndicator.setAnimation(ra_comp);
             lIndicator.startAnimation(ra_comp);
+            //Not displaying values
         }
     }
 
@@ -1573,6 +1642,80 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         dialog.setView(customStyle);
         dialog.show();
+    }
+
+    //This function it is used both for initialization and reset
+    private void initStability(){
+        //this.stabilityListCompass.clear(); //This one can be avoided to reset
+        this.stabilityListInclination.clear();
+        this.stabilityListDipDirection.clear();
+    }
+
+    private void populateStability(int currentValue, int pick){
+        switch(pick) {
+            case 0:
+                if (this.stabilityListCompass.size() < STABILITY_RANGE_IN)
+                    this.stabilityListCompass.add(currentValue);
+                else {
+                    this.stabilityListCompass.removeFirst();
+                    this.stabilityListCompass.add(currentValue);
+                }
+                break;
+            case 1:
+                if (this.stabilityListInclination.size() < STABILITY_RANGE_IN)
+                    this.stabilityListInclination.add(currentValue);
+                else {
+                    this.stabilityListInclination.removeFirst();
+                    this.stabilityListInclination.add(currentValue);
+                }
+                break;
+            case 2:
+                if (this.stabilityListDipDirection.size() < STABILITY_RANGE_DD)
+                    this.stabilityListDipDirection.add(currentValue);
+                else {
+                    this.stabilityListDipDirection.removeFirst();
+                    this.stabilityListDipDirection.add(currentValue);
+                }
+                break;
+            default:
+                System.out.println("Wrong pick");
+                break;
+
+        }
+    }
+
+    private int getAverageStability(int pick){
+        int sum = 0,
+            divider = 1;
+
+        switch(pick) {
+            case 0:
+                for (int i = 0; i < stabilityListCompass.size(); i++) {
+                    sum += stabilityListCompass.get(i);
+                }
+                divider = stabilityListCompass.size();
+                break;
+            case 1:
+                for (int i = 0; i < stabilityListInclination.size(); i++) {
+                    sum += stabilityListInclination.get(i);
+                }
+                divider = stabilityListInclination.size();
+                break;
+            case 2:
+                for (int i = 0; i < stabilityListDipDirection.size(); i++) {
+                    sum += stabilityListDipDirection.get(i);
+                }
+                divider = stabilityListDipDirection.size();
+                break;
+            default:
+                System.out.println("Wrong pick");
+                sum = -1;
+                // -1 ... something gone wrong!
+                break;
+
+        }
+
+        return (sum/divider);
     }
 }
 
