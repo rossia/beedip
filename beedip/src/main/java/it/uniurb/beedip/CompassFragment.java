@@ -121,6 +121,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private int currentCompass;      // Magnetic compass measurement (degrees)
     private int currentDipdirection; //Geological compass dip direction (degrees)
     private int currentInlcination;  //Geological compass inclination (degrees)
+    private int arrowDirection;
     private boolean isUpright;       //True = upright, False = overturned
     private boolean isAccurate;      //True = accurate, False = not accurate
     private String currentRockunit;
@@ -833,7 +834,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         else{
             this.compassAnimation(currentCompass);
             if(currentType.equals(features.get(4)))
-                this.lineAnimation(currentInlcination, currentDipdirection);
+                this.lineAnimation(currentInlcination, currentDipdirection, arrowDirection);
             else
                 this.planeAnimation(prevDipangle, currentDipdirection, currentInlcination, isupsideDownTracker, false);
             //this.lineAnimation(currentInlcination, currentDipdirection);
@@ -1379,11 +1380,18 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         inclination = this.getAverageStability(1);
         dipDirection = this.getAverageStability(2);
 
+        if((orientation[1] > 0) && (inclination != 0))
+            arrowDirection = 0;
+        else if((orientation[1] < 0) && (inclination != 0))
+            arrowDirection = 1;
+        else if(inclination == 0)
+            arrowDirection = 2;
+
         //Calls for the animation
-        this.lineAnimation(inclination, dipDirection);
+        this.lineAnimation(inclination, dipDirection, arrowDirection);
     }
 
-    private void lineAnimation(int plunge, int plungeDirection){
+    private void lineAnimation(int plunge, int plungeDirection, int arrowDirection){
         String toShow;
         //Displaying the values
         currentInlcination = plunge;
@@ -1395,7 +1403,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         ra_comp.setFillAfter(true);
         ra_comp.setRepeatCount(Animation.INFINITE);
         if (cfState) {
-            bIndicator.setImageResource(R.drawable.arrow);
+            if(arrowDirection == 0)
+                bIndicator.setImageResource(R.drawable.arrow);
+            else if(arrowDirection == 1)
+                bIndicator.setImageResource(R.drawable.udarrow);
+            else if(arrowDirection == 2)
+                bIndicator.setImageResource(R.drawable.darrow);
             bIndicator.getLayoutParams().width = 150;
             bIndicator.getLayoutParams().height = 150;
             bIndicator.requestLayout();
@@ -1405,7 +1418,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             toShow = currentInlcination + "/" + currentDipdirection;
             displayValues.setText(toShow);
         } else {
-            lIndicator.setImageResource(R.drawable.arrow);
+            if(arrowDirection == 0)
+                lIndicator.setImageResource(R.drawable.arrow);
+            else if(arrowDirection == 1)
+                lIndicator.setImageResource(R.drawable.udarrow);
+            else if(arrowDirection == 2)
+                lIndicator.setImageResource(R.drawable.darrow);
             lIndicator.getLayoutParams().width = 35;
             lIndicator.getLayoutParams().height = 35;
             lIndicator.requestLayout();
