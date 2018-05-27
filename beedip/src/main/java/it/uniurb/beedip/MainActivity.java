@@ -42,6 +42,11 @@ public class MainActivity extends Activity implements
     private static final int COMPASS_POSITION = 2;
 
     /**
+     * info drawer position
+     */
+    private static final int INFO_POSITION = 3;
+
+    /**
      * Map permissions request code for accessing fine locations
      */
     public static final int MAP_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 100;
@@ -98,6 +103,11 @@ public class MainActivity extends Activity implements
      */
     private CompassFragment compassFragment;
 
+    /**
+     * Info fragment
+     */
+    private InfoFragment infoFragment;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,6 +123,8 @@ public class MainActivity extends Activity implements
                 .findFragmentById(it.uniurb.beedip.R.id.fragment_map);
         compassFragment = (CompassFragment) getFragmentManager()
                 .findFragmentById(it.uniurb.beedip.R.id.fragment_compass);
+        infoFragment = (InfoFragment) getFragmentManager()
+                .findFragmentById(R.id.fragment_info);
 
         navigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager()
                 .findFragmentById(it.uniurb.beedip.R.id.navigation_drawer);
@@ -216,6 +228,11 @@ public class MainActivity extends Activity implements
                     title = getString(it.uniurb.beedip.R.string.title_compass);
                 }
                 break;
+            case INFO_POSITION:
+                if (infoFragment != null) {
+                    transaction.show(infoFragment);
+                    title = getString(it.uniurb.beedip.R.string.title_info);
+                }
 
             default:
 
@@ -234,6 +251,11 @@ public class MainActivity extends Activity implements
         if (position != COMPASS_POSITION) {
             if (mapFragment != null && mapFragment.isAdded()) {
                 transaction.hide(compassFragment);
+            }
+        }
+        if(position != INFO_POSITION) {
+            if (infoFragment != null && infoFragment.isAdded()){
+                transaction.hide(infoFragment);
             }
         }
 

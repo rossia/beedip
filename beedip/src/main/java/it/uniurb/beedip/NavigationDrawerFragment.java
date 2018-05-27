@@ -91,7 +91,8 @@ public class NavigationDrawerFragment extends Fragment {
 				android.R.id.text1, new String[] {
 						getString(it.uniurb.beedip.R.string.title_manager),
 						getString(it.uniurb.beedip.R.string.title_map),
-						"Compass",}));
+						"Compass",
+						getString(R.string.title_info)}));
 		mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
 		return mDrawerListView;
 	}

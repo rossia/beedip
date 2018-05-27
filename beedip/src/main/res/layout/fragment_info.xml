@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/custom_black">
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="381dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:text="Info and Credits"
+        android:textColor="@color/custom_yellow"
+        android:textSize="44dp" />
+
+    <ScrollView
+        android:id="@+id/SCROLLER_ID"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical"
+        android:fillViewport="true">
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/textView2"
+        android:text="BeeDip open source geological compass ver. 0.2\n
+
+BeeDip allow to:\n
+- collect structural geological georeferenced measurement on surfaces and lineations, in customizable project;\n
+- show the measurement points on maps (also off-line) - import and export Geopackage data, in a dedicated but not exclusive way for QGIS.\n
+\n
+Quick start\n
+………………………...\n
+\n
+Information, tutorial and support on http://...........\n
+\n
+\n
+CREDITS
+\n
+Licencing\n
+\n
+BeeDip ver. 0.2 is developed and distributed under open source licence LGPL ?\n
+Geopackage is under MIT.....\n
+\n
+Info  [link]\n
+[email]\n
+\n
+BeeDip [link] has a QGIS plug-in for export (off-line maps) and import (data)\n
+\n
+Team\n
+\n
+Mauro De Donatis - ideation, planning and coordination\n
+Luca Bartoccioni – design and development\n
+Andrea Rossi – design and development\n
+Davide Cortellucci - development\n
+\n
+\n
+Research product of
+Laboratori of Information Technology for Earth and Environmental Sciences
+Department of Pure and Applied Sciences
+Apllied Information Technology and Geological Sciences
+"
+        android:textColor="@color/custom_yellow" />
+    </ScrollView>
+
+
+
+</RelativeLayout>
