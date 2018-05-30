@@ -24,5 +24,7 @@
     <color name="polygon_draw_fill_color">#50FF0000</color>
     <color name="polygon_hole_draw_color">#FFFF0000</color>
     <color name="polygon_hole_draw_fill_color">#50FFFFFF</color>
+    <color name="custom_black">#000000</color>
+    <color name="custom_yellow">#f2de00</color>
     
 </resources>
