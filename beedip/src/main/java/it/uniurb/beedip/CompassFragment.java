@@ -305,12 +305,17 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 String textToSwap;
                 //Switching compass and clinometer depending on what's active
                 if (cfState) {
-                    if(!currentType.equals(features.get(4))) {
-                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.mid);
-                        bIndicator.setImageResource(R.drawable.arrow);
+                    if(currentType != null) {
+                        if (!currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString())) {
+                            lIndicator.setImageResource(it.uniurb.beedip.R.drawable.mid);
+                            bIndicator.setImageResource(R.drawable.arrow);
+                        } else {
+                            lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
+                            bIndicator.setImageResource(R.drawable.arrow);
+                        }
                     }
                     else{
-                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
+                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.mid);
                         bIndicator.setImageResource(R.drawable.arrow);
                     }
                     textToSwap = currentCompass+"°";
@@ -318,13 +323,18 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     //Hiding buttons
                     hideButtons();
                 } else {
-                    if(!currentType.equals(features.get(4))) {
-                        lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
-                        bIndicator.setImageResource(R.drawable.mid);
+                    if(currentType != null) {
+                        if (!currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString())) {
+                            lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
+                            bIndicator.setImageResource(R.drawable.mid);
+                        } else {
+                            lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
+                            bIndicator.setImageResource(R.drawable.arrow);
+                        }
                     }
                     else{
                         lIndicator.setImageResource(it.uniurb.beedip.R.drawable.arrow);
-                        bIndicator.setImageResource(R.drawable.arrow);
+                        bIndicator.setImageResource(R.drawable.mid);
                     }
                     textToSwap = currentInlcination+"/"+currentDipdirection;
                     displayValues.setText(textToSwap);
@@ -378,7 +388,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             public boolean onLongClick(View v) {
                 //Switch from isUpright indicator to normal and viceversa
                 //Only if currentType = "bedding"
-                if(currentType.equals(CompassMeasurement.SurfaceType.BEDDING.toString()))
+                if(currentType != null) {
+                    if (currentType.equals(CompassMeasurement.SurfaceType.BEDDING.toString()))
+                        isUpright = !isUpright;
+                }
+                else
                     isUpright = !isUpright;
                 return true;
             }
@@ -805,10 +819,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
                 //Roll
                 if (orientation[2] >= 90)
-                    orientation[2] = Math.abs(orientation[2] - 180);
-                if (orientation[2] <= -90)
+                    orientation[2] = Math.abs(orientation[2] - 180); //e se l'errore fosse qui?
+                if (orientation[2] <= -90) {
                     orientation[2] = Math.abs(orientation[2] + 180);
-                orientation[2] = -orientation[2];
+                    orientation[2] = -orientation[2];
+                }
                 //a qui
 
             } //compresa questa parentesi
@@ -831,13 +846,17 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 this.planeCalculation(orientation);
             }
         }
-        else{
+        else if(currentType != null){
             this.compassAnimation(currentCompass);
-            if(currentType.equals(features.get(4)))
+            if(currentType.equals(CompassMeasurement.SurfaceType.LINEATION.toString()))
                 this.lineAnimation(currentInlcination, currentDipdirection, arrowDirection);
             else
                 this.planeAnimation(prevDipangle, currentDipdirection, currentInlcination, isupsideDownTracker, false);
             //this.lineAnimation(currentInlcination, currentDipdirection);
+        }
+        else {
+            this.compassAnimation(currentCompass);
+            this.planeAnimation(prevDipangle, currentDipdirection, currentInlcination, isupsideDownTracker, false);
         }
     }
 
@@ -1232,6 +1251,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
 
         //Calls for the animation
         this.planeAnimation(dipAngle, distance, toDisplay, upsideDown, true);
+        /*String toShow;
+        toShow = y+"/"+z;
+        displayValues.setText(toShow);*/
     }
 
     /*Big clock face animation on geological compass mode*/
@@ -1240,6 +1262,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         boolean avoidAnimation = false;
 
         if(doOffset) {
+            //if(!upsideDown) {
             //Offsetting dipAngle for animation
             dipAngle = dipAngle + 180;
             if (dipAngle >= 360)
@@ -1251,11 +1274,18 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 dipAngle = dipAngle - 180;
                 dipAngle = 180 - dipAngle;
             }
+            //}
             if (upsideDown) {
                 dipAngle = dipAngle + 180;
                 if (dipAngle >= 360)
                     dipAngle = dipAngle - 360;
             }
+
+            //Mirroring the quadrant
+            dipAngle = 180 - dipAngle;
+            dipAngle += 180;
+            if(dipAngle == 360)
+                dipAngle = 0;
         }
 
         RotateAnimation ra_clino = new RotateAnimation(prevDipangle, dipAngle, Animation.RELATIVE_TO_SELF,
