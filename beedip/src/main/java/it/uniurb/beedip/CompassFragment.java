@@ -1719,6 +1719,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     //This function it is used both for initialization and reset
     private void initStability(){
         //this.stabilityListCompass.clear(); //This one can be avoided to reset
+        this.stabilityListCompass.clear();
         this.stabilityListInclination.clear();
         this.stabilityListDipDirection.clear();
     }
@@ -1726,6 +1727,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
     private void populateStability(int currentValue, int pick){
         switch(pick) {
             case 0:
+                /*Little trick to avoid wrong value displaying while indicator floats around 0*/
+                if((!stabilityListCompass.isEmpty()) && (Math.abs(stabilityListCompass.getLast() - currentValue) > 330)){
+                    this.initStability();
+                }
                 if (this.stabilityListCompass.size() < STABILITY_RANGE_IN)
                     this.stabilityListCompass.add(currentValue);
                 else {
@@ -1734,6 +1739,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 }
                 break;
             case 1:
+                if((!stabilityListInclination.isEmpty()) && (Math.abs(stabilityListInclination.getLast() - currentValue) > 330)){
+                    this.initStability();
+                }
                 if (this.stabilityListInclination.size() < STABILITY_RANGE_IN)
                     this.stabilityListInclination.add(currentValue);
                 else {
@@ -1742,6 +1750,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 }
                 break;
             case 2:
+                if((!stabilityListDipDirection.isEmpty()) && (Math.abs(stabilityListDipDirection.getLast() - currentValue) > 330)){
+                    this.initStability();
+                }
                 if (this.stabilityListDipDirection.size() < STABILITY_RANGE_DD)
                     this.stabilityListDipDirection.add(currentValue);
                 else {
@@ -1786,7 +1797,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 break;
 
         }
-
+        /*It used to divide by zero, this one seemed a good solution though*/
+        if(divider == 0)
+            divider = 1;
         return (sum/divider);
     }
 }
