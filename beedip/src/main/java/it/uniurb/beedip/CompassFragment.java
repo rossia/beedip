@@ -1153,15 +1153,18 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         }
     }
 
+    /*Planes value as dip and dip direction are calculated from the "orientation" array*/
     public void planeCalculation(float[] orientation){
-        //INCLINOMETER
-        //Acquiring values
+
         boolean upsideDown = false;
-        //int usOffset;
-        int x = Math.round(orientation[0]);
-        int y = Math.round(orientation[1]);
-        int z = Math.round(orientation[2]);
-        //Offsetting y axis
+        double ya = (double) orientation[0]; //yaw
+        double pi = (double) orientation[1]; //pitch
+        double ro = (double) orientation[2]; //roll
+
+        /*int x = Math.round(orientation[0]); //yaw
+        int y = Math.round(orientation[1]); //pitch
+        int z = Math.round(orientation[2]); //roll*/
+        /*Offsetting y axis
         if (y == 0) {
             //nothing
         } else if ((y > 90) && (y < 179)) {
@@ -1170,97 +1173,95 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             y = 0;
         } else if ((y < -90) && (y > -179)) {
             y = -(90 + (y + 90));
-        }
-        double y1 = (double) y;
-        double z1 = orientation[2];
-        double posy,
-                posz,
-                ypar,
-                zpar,
-                res,
-                dipDouble;
-        int dipAngle,
-                distance,
-                toDisplay;
+        }*/
 
-        posy = Math.abs(y1);
-        posz = Math.abs(z1);
-        //Converting posy and posz from degrees to radians
-        posy = posy * Math.PI / 180;
-        posz = posz * Math.PI / 180;
-        ypar = Math.sin(posy);
-        zpar = Math.sin(posz);
+        //double y1 = (double) pi;
+        //double z1 = orientation[2];
+
+        double pi_abs,
+                ro_abs,
+                pi_sin,
+                ro_sin,
+                res;
+
+        int dipAngle,
+                dipDirection,
+                inclination;
+
+        pi_abs = Math.abs(pi);
+        ro_abs = Math.abs(ro);
+        //Converting absolute pitch and roll from degrees to radians
+        pi_abs = Math.toRadians(pi_abs);
+        ro_abs = Math.toRadians(ro_abs);
+        //Calculating sines of pitch and roll
+        pi_sin = Math.sin(pi_abs);
+        ro_sin = Math.sin(ro_abs);
         //Finding the resultant vector
-        res = Math.sqrt(Math.pow(ypar, 2.0) + Math.pow(zpar, 2.0));
+        res = Math.sqrt(Math.pow(pi_sin, 2.0) + Math.pow(ro_sin, 2.0));
         //Angle in degrees
-        dipDouble = (Math.asin(ypar / res) * 180 / Math.PI);
-        dipAngle = (int) dipDouble;
+        res = Math.toDegrees(Math.asin(pi_sin / res));
+        dipAngle = (int) res;
+
         //Getting the offset to have the real angle
-        if ((y > 0) && (z > 0)) {
+        if ((pi > 0) && (ro > 0)) {
             //I
             dipAngle = 90 - dipAngle;
-        } else if ((y > 0) && (z < 0)) {
+        } else if ((pi > 0) && (ro < 0)) {
             //IV
             dipAngle = dipAngle + 270;
-        } else if ((y < 0) && (z > 0)) {
+        } else if ((pi < 0) && (ro > 0)) {
             //II
             dipAngle = dipAngle + 90;
-        } else if ((y < 0) && (z < 0)) {
+        } else if ((pi < 0) && (ro < 0)) {
             //III
             dipAngle = 90 - dipAngle + 180;
-        }else if ((y == 0) && (z > 0)) {
+        }else if ((pi == 0) && (ro > 0)) {
             dipAngle = 90;
-        } else if ((y == 0) && (z < 0)) {
+        } else if ((pi == 0) && (ro < 0)) {
             dipAngle = 270;
-        } else if ((y > 0) && (z == 0)) {
+        } else if ((pi > 0) && (ro == 0)) {
             dipAngle = 0;
-        } else if ((y < 0) && (z == 0)) {
+        } else if ((pi < 0) && (ro == 0)) {
             dipAngle = 180;
-        } else if ((y == 0) && (z == 0)) {
+        } else if ((pi == 0) && (ro == 0)) {
             dipAngle = 0;
         }
 
         //Finding out if phone is upside down and telling related values
-        if((Math.abs(Math.round(orientation[1])) > 90)){
+        if((Math.abs(Math.round(pi)) > 90)){
             upsideDown = true;
             dipAngle = dipAngle + 180;
             if(dipAngle >= 360)
                 dipAngle = dipAngle - 360;
-
         }
 
-        distance = dipAngle - x;
-        //dipAngle = direction of the phone's inclination
-        //Distance dipDirection
-        if (distance <= 0)
-            distance = 360 - x + dipAngle;
-        distance = Math.abs(360 - distance);
-
+        dipDirection = dipAngle - (int) ya;
+        //dipAngle represents the direction of the phone's inclination
+        if (dipDirection <= 0)
+            dipDirection = 360 - (int) ya + dipAngle;
+        dipDirection = Math.abs(360 - dipDirection);
 
         //Calculating inclination to display
-        toDisplay = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(y1)), 2.0) +Math.pow(Math.sin(Math.toRadians(z1)), 2.0)))));
-        if((toDisplay == 0) && ((Math.abs(y) > 3) || (Math.abs(z) > 3)))
-            toDisplay = 90;
-
+        inclination = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(pi)), 2.0) +Math.pow(Math.sin(Math.toRadians(ro)), 2.0)))));
+        if((inclination == 0) && ((Math.abs(pi) > 3) || (Math.abs(ro) > 3)))
+            inclination = 90;
 
         //Stabilization algorithm
-        this.populateStability(toDisplay, 1);   //toDisplay = inclination
-        this.populateStability(distance, 2); //distance = dipDirection
-        toDisplay = this.getAverageStability(1);
-        distance = this.getAverageStability(2);
+        this.populateStability(inclination, 1);
+        this.populateStability(dipDirection, 2);
+        inclination = this.getAverageStability(1);
+        dipDirection = this.getAverageStability(2);
 
-        //Calls for the animation
-        this.planeAnimation(dipAngle, distance, toDisplay, upsideDown, true);
-        /*String toShow;
-        toShow = y+"/"+z;
-        displayValues.setText(toShow);*/
+        //Calls for the animation method
+        this.planeAnimation(dipAngle, dipDirection, inclination, upsideDown, true);
     }
 
     /*Big clock face animation on geological compass mode*/
-    private void planeAnimation(int dipAngle, int distance, int toDisplay, boolean upsideDown, boolean doOffset){
+    private void planeAnimation(int dipAngle, int dipdirection, int inclination, boolean upsideDown, boolean doOffset){
         String toShow;
         boolean avoidAnimation = false;
 
+        /*Offset for the animation*/
         if(doOffset) {
             //if(!upsideDown) {
             //Offsetting dipAngle for animation
@@ -1280,7 +1281,6 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 if (dipAngle >= 360)
                     dipAngle = dipAngle - 360;
             }
-
             //Mirroring the quadrant
             dipAngle = 180 - dipAngle;
             dipAngle += 180;
@@ -1294,8 +1294,8 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         ra_clino.setFillAfter(true);
         ra_clino.setRepeatCount(Animation.INFINITE);
         this.prevDipangle = dipAngle;
-        this.currentDipdirection = distance;
-        this.currentInlcination = toDisplay;
+        this.currentDipdirection = dipdirection;
+        this.currentInlcination = inclination;
         this.isupsideDownTracker = upsideDown;
 
         if(cfState) {
@@ -1384,10 +1384,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         int dipDirection = Math.round(orientation[0]);
         int inclination = Math.round(orientation[1]);
 
-        if(inclination <= 90 && inclination >= 0){
+        /*if(inclination <= 90 && inclination >= 0){
             //Nothing
         }
-        else if(((inclination < 180) && (inclination > 90)) || (Math.abs(inclination) == 180)) {
+        else*/ if(((inclination < 180) && (inclination > 90)) || (Math.abs(inclination) == 180)) {
             inclination = Math.abs(Math.abs(inclination) - 180);
             dipDirection += 180;
             if(dipDirection > 360){
