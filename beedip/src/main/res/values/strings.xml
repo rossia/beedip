@@ -227,6 +227,8 @@
     <string name="userNote_field_name">note</string>
     <string name="latitude_longitude">latitude/longitude</string>
     <string name="title_info"><![CDATA[Info & Credits]]></string>
+    <string name="Note">Leave a note.</string>
+    <string name="Save">Save</string>
     <string-array name="preloaded_geopackage_url_labels">
         <item>Blue Marble</item>
         <item>Whitehorse</item>

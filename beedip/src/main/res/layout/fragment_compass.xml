@@ -189,7 +189,14 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
 
-
+    <ImageButton
+        android:id="@+id/photobutton"
+        android:layout_width="70dp"
+        android:layout_height="52dp"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/coordinates"
+        android:background="#000000"
+        android:scaleType="fitCenter" />
 
 
 </RelativeLayout>
