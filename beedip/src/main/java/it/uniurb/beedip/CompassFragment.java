@@ -282,6 +282,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
             save = (Button) getView().findViewById(R.id.save);
             coordinates = (Button) getView().findViewById(R.id.coordinates);
             photobutton = (ImageButton) getView().findViewById(R.id.photobutton);
+            photobutton.setBackgroundResource(R.drawable.camerapic);
         }catch (NullPointerException x){
             Log.e("Error", "Error:"+x);
         }
@@ -319,6 +320,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                     save.setEnabled(false);
                     //Eventually cancel the name of the photo binded to the saved measure.
                     fileName = null;
+                    photobutton.setBackgroundResource(R.drawable.camerapic);
                 }
                 else {
                     Toast.makeText(getActivity(), "Not able to save if clock face is not locked.", Toast.LENGTH_LONG).show();
@@ -890,6 +892,7 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             //Store photo direction?
             Toast.makeText(getActivity(), "Photo successfully saved.", Toast.LENGTH_LONG).show();
+            photobutton.setBackgroundResource(R.drawable.camerapic2);
         }
     }
 
