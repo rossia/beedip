@@ -338,6 +338,10 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         photobutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Intent cameraIntent = new Intent(getActivity(), CameraActivity.class);
+                startActivity(cameraIntent);
+            }
+                /*
 
                 // Here, we are making a folder named Beedip to store
                 // pics taken by the camera using this application.
@@ -372,7 +376,9 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 }
                 else
                     Toast.makeText(getActivity(), "Error: directory cannot be created.", Toast.LENGTH_LONG).show();
-            }
+
+
+            }*/
         });
 
         /*-------------------------------------------LITTLE CLOCK FACE BUTTON---------------------------------------------------------------------------------------------*/
