@@ -18,10 +18,13 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
+import it.uniurb.beedip.camera.GpkgPicture;
 import it.uniurb.beedip.camera.LocationService;
+import it.uniurb.beedip.camera.FilePicture;
 import it.uniurb.beedip.camera.PersistentPicture;
 import it.uniurb.beedip.data.GeoPackageDatabase;
 import it.uniurb.beedip.data.GeoPackageDatabases;
@@ -126,36 +129,38 @@ public class CameraActivity extends Activity implements SensorEventListener {
         }
     };
 
-    private void savePicture(byte[] data) throws IOException {
+    private void savePicture(byte[] data) throws Exception {
         Location location = locationService.getLocation();
+        if (!isLocationAvailable(location)) {
+            Toast.makeText(getApplicationContext(), R.string.camera_gps_unavailable, Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        PersistentPicture picture = new PersistentPicture(data);
-        picture.setAzimuth(azimuth);
-        picture.setDip(dip);
-        if (isLocationAvailable(location))
-            picture.setLocation(location);
+        if (!isDatabaseSelect()) {
+            Toast.makeText(getApplicationContext(), R.string.camera_no_project, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String databaseName = selectedDatabase.getDatabase();
 
-        picture.save(getDatabaseName());
+        // Save the picture in the filesystem and in the current geopackage project
+        List<PersistentPicture> pictures = Arrays.asList(new FilePicture(data), new GpkgPicture(data, this));
+        for (PersistentPicture persistentPicture : pictures) {
+            persistentPicture.setAzimuth(azimuth);
+            persistentPicture.setDip(dip);
+            persistentPicture.setLocation(location);
+            persistentPicture.save(databaseName);
+        }
 
-        String baseMessage = "Photo saved under Pictures/BeeDip";
-        if (isLocationAvailable(location))
-            Toast.makeText(getApplicationContext(), baseMessage, Toast.LENGTH_SHORT).show();
-        else
-            Toast.makeText(getBaseContext(), baseMessage + "\nGPS data unavailable", Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), R.string.camera_photo_saved, Toast.LENGTH_SHORT).show();
     }
 
     private boolean isLocationAvailable(Location location) {
         return location != null;
     }
 
-    private String getDatabaseName() {
-        if (selectedDatabase != null && selectedDatabase.getDatabase() != null) {
-            return selectedDatabase.getDatabase();
-        } else {
-            return "NoProject";
-        }
+    private boolean isDatabaseSelect() {
+        return selectedDatabase != null && selectedDatabase.getDatabase() != null;
     }
-
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {

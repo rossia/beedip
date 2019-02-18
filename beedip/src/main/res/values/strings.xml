@@ -303,5 +303,8 @@
     <string name="dip_format">Dip: %s</string>
     <string name="azimuth_format">Azimuth: %s</string>
     <string name="camera_project_db_alert_title">No project selected</string>
-    <string name="camera_project_db_alert_message">No project has been selected.\nPictures will not be linked to a project.</string>
+    <string name="camera_project_db_alert_message">No project has been selected.\nPictures will not be saved.</string>
+    <string name="camera_gps_unavailable">GPS data unavailable</string>
+    <string name="camera_no_project">No project selected"</string>
+    <string name="camera_photo_saved">Photo saved under Pictures/BeeDip\nand in the selected project</string>
 </resources>
