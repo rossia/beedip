@@ -935,12 +935,12 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 noAdjRoll = (int) orientation[2];
 
                 //Roll
-                if (orientation[2] >= 90)
+                /*if (orientation[2] >= 90)
                     orientation[2] = Math.abs(orientation[2] - 180);
                 if (orientation[2] <= -90) {
                     orientation[2] = Math.abs(orientation[2] + 180);
                     orientation[2] = -orientation[2];
-                }
+                }*/
             }
         }
 
@@ -1294,61 +1294,59 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         double ya = (double) orientation[0]; //yaw
         double pi = (double) orientation[1]; //pitch
         double ro = (double) orientation[2]; //roll
-
-        /*int x = Math.round(orientation[0]); //yaw
-        int y = Math.round(orientation[1]); //pitch
-        int z = Math.round(orientation[2]); //roll*/
-        /*Offsetting y axis
-        if (y == 0) {
-            //nothing
-        } else if ((y > 90) && (y < 179)) {
-            y = 90 - (y - 90);
-        } else if ((y == 180) || (y == -180)) {
-            y = 0;
-        } else if ((y < -90) && (y > -179)) {
-            y = -(90 + (y + 90));
-        }*/
-
-        //double y1 = (double) pi;
-        //double z1 = orientation[2];
-
-        double pi_abs,
-                ro_abs,
-                pi_sin,
-                ro_sin,
-                res;
-
         int dipAngle,
                 dipDirection,
                 inclination;
 
-        pi_abs = Math.abs(pi);
-        ro_abs = Math.abs(ro);
-        //Converting absolute pitch and roll from degrees to radians
-        pi_abs = Math.toRadians(pi_abs);
-        ro_abs = Math.toRadians(ro_abs);
-        //Calculating sines of pitch and roll
-        pi_sin = Math.sin(pi_abs);
-        ro_sin = Math.sin(ro_abs);
-        //Finding the resultant vector
-        res = Math.sqrt(Math.pow(pi_sin, 2.0) + Math.pow(ro_sin, 2.0));
-        //Angle in degrees
-        res = Math.toDegrees(Math.asin(pi_sin / res));
-        dipAngle = (int) res;
+
+        //OFFSET PART RIGHT HERE
+        //Offsetting pitch
+        if (pi == 0) {
+            //nothing
+        } else if ((pi > 90) && (pi < 179)) {
+            pi = 90 - (pi - 90);
+        } else if ((pi == 180) || (pi == -180)) {
+            pi = 0;
+        } else if ((pi < -90) && (pi > -179)) {
+            pi = -(90 + (pi + 90));
+        }
+        //Offsetting roll
+        if (ro == 0) {
+            //nothing
+        } else if ((ro > 90) && (ro < 179)) {
+            ro = 90 - (ro - 90);
+        } else if ((ro == 180) || (ro == -180)) {
+            ro = 0;
+        } else if ((ro < -90) && (ro > -179)) {
+            ro = -(90 + (ro + 90));
+        }
+
+        //Dip angle relative to each quadrant. need to offset this
+        double tmp1,
+                tmp2,
+                tmp3;
+        //tmp1 = Math.sqrt(Math.pow((Math.sin(Math.abs(Math.toRadians(pi)))), 2.0)+Math.pow((Math.sin(Math.abs(Math.toRadians(ro)))), 2.0));
+        tmp1 = Math.sqrt(Math.pow(pi, 2.0)+Math.pow(ro, 2.0));
+        tmp2 = ro/tmp1;
+        tmp3 = Math.abs(Math.toDegrees(Math.asin(tmp2)));
+        dipAngle = (int) tmp3;
 
         //Getting the offset to have the real angle
         if ((pi > 0) && (ro > 0)) {
             //I
-            dipAngle = 90 - dipAngle;
+            //dipAngle = 90 - dipAngle;
         } else if ((pi > 0) && (ro < 0)) {
             //IV
-            dipAngle = dipAngle + 270;
+            //dipAngle = dipAngle + 270;
+            dipAngle = 360 - dipAngle;
         } else if ((pi < 0) && (ro > 0)) {
             //II
-            dipAngle = dipAngle + 90;
+            //dipAngle = dipAngle + 90;
+            dipAngle = 90 + (90 - dipAngle);
         } else if ((pi < 0) && (ro < 0)) {
             //III
-            dipAngle = 90 - dipAngle + 180;
+            //dipAngle = 90 - dipAngle + 180;
+            dipAngle = 180 + dipAngle;
         }else if ((pi == 0) && (ro > 0)) {
             dipAngle = 90;
         } else if ((pi == 0) && (ro < 0)) {
@@ -1369,11 +1367,16 @@ public class CompassFragment extends Fragment implements SensorEventListener {
                 dipAngle = dipAngle - 360;
         }
 
-        dipDirection = dipAngle - (int) ya;
+        //THIS IS DA PROBLEM!
+        /*dipDirection = dipAngle - (int) ya;
         //dipAngle represents the direction of the phone's inclination
         if (dipDirection <= 0)
             dipDirection = 360 - (int) ya + dipAngle;
-        dipDirection = Math.abs(360 - dipDirection);
+        dipDirection = Math.abs(360 - dipDirection);*/
+        //PROBLEM SOLVED GG!
+        dipDirection = dipAngle + (int) ya;
+        if(dipDirection > 360)
+            dipDirection -= 360;
 
         //Calculating inclination to display
         inclination = (int) Math.abs(Math.toDegrees(Math.asin(Math.sqrt(Math.pow(Math.sin(Math.toRadians(pi)), 2.0) +Math.pow(Math.sin(Math.toRadians(ro)), 2.0)))));
@@ -1386,8 +1389,11 @@ public class CompassFragment extends Fragment implements SensorEventListener {
         inclination = this.getAverageStability(1);
         dipDirection = this.getAverageStability(2);
 
-        //Calls for the animation method
         this.planeAnimation(dipAngle, dipDirection, inclination, upsideDown, true);
+
+        /*TEST STUFF
+        String toShow = dipAngle+"\n"+dipDirection+"\n"+(int)ya;
+        displayValues.setText(toShow);*/
     }
 
     /*Big clock face animation on geological compass mode*/
